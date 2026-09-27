@@ -110,16 +110,16 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-echo "[mprocs-blockscout] API http://localhost:${API_PORT}  UI http://localhost:${UI_PORT}"
+echo "[mprocs-blockscout] API http://127.0.0.1:${API_PORT}  UI http://127.0.0.1:${UI_PORT}"
 cd "${BACKEND}"
 mix phx.server &
 BACKEND_PID=$!
 
-export NEXT_PUBLIC_API_HOST=localhost
+export NEXT_PUBLIC_API_HOST=127.0.0.1
 export NEXT_PUBLIC_API_PORT="${API_PORT}"
 export NEXT_PUBLIC_API_PROTOCOL=http
 export NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL=ws
-export NEXT_PUBLIC_APP_HOST=localhost
+export NEXT_PUBLIC_APP_HOST=127.0.0.1
 export NEXT_PUBLIC_APP_PORT="${UI_PORT}"
 export NEXT_PUBLIC_APP_PROTOCOL=http
 export NEXT_PUBLIC_APP_ENV=development
@@ -133,11 +133,11 @@ export NEXT_PUBLIC_IS_TESTNET=true
 
 cd "${FRONTEND}"
 cat >.env.local <<EOF
-NEXT_PUBLIC_API_HOST=localhost
+NEXT_PUBLIC_API_HOST=127.0.0.1
 NEXT_PUBLIC_API_PORT=${API_PORT}
 NEXT_PUBLIC_API_PROTOCOL=http
 NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL=ws
-NEXT_PUBLIC_APP_HOST=localhost
+NEXT_PUBLIC_APP_HOST=127.0.0.1
 NEXT_PUBLIC_APP_PORT=${UI_PORT}
 NEXT_PUBLIC_APP_PROTOCOL=http
 NEXT_PUBLIC_APP_ENV=development
