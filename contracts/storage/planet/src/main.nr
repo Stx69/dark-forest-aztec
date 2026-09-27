@@ -1,7 +1,8 @@
 // Storage contract for planet state (meta, owner, caps, resources, mods, etc.).
 // Only admin or authorized contracts can write; anyone can verify state by hash.
+use ::aztec::macros::aztec;
 
-#[::types::storage::state::game_contract]
+#[aztec]
 pub contract PlanetStorage {
     use ::aztec::{
         macros::{
@@ -13,7 +14,7 @@ pub contract PlanetStorage {
     };
 
     use ::aztec::state_vars::{Map, PublicMutable};
-    use ::types::storage::planet::{Planet, PlanetSplitRoots};
+    use ::types::storage::planet::Planet;
 
     #[storage]
     struct Storage<Context> {
@@ -25,29 +26,13 @@ pub contract PlanetStorage {
         authorized_count: PublicMutable<u32, Context>,
         // id (e.g. location_id) -> poseidon2 hash of Planet
         state_roots: Map<Field, PublicMutable<Field, Context>, Context>,
-        // Versioned split roots. The legacy root above remains authoritative
-        // for historical events while new writes dual-publish these roots.
-        static_roots: Map<Field, PublicMutable<Field, Context>, Context>,
-        dynamic_roots: Map<Field, PublicMutable<Field, Context>, Context>,
-        stats_roots: Map<Field, PublicMutable<Field, Context>, Context>,
-        modifier_roots: Map<Field, PublicMutable<Field, Context>, Context>,
-        composed_roots: Map<Field, PublicMutable<Field, Context>, Context>,
     }
 
     #[event]
-    #[::types::storage::state::state_update]
     struct PlanetUpdate {
         id: Field,
         block_number: u32,
         state: Planet,
-    }
-
-    #[event]
-    #[::types::storage::state::state_update]
-    struct PlanetSplitRootsUpdate {
-        id: Field,
-        block_number: u32,
-        state: PlanetSplitRoots,
     }
 
     #[external("public")]
@@ -67,10 +52,9 @@ pub contract PlanetStorage {
     #[internal("public")]
     fn assert_authorized() {
         let caller = self.msg_sender();
+        let is_admin = caller == self.storage.admin.read();
         let is_authorized = self.storage.authorized_map.at(caller).read();
-        if !is_authorized {
-            assert(caller == self.storage.admin.read(), "Not authorized");
-        }
+        assert((is_admin as u8) | (is_authorized as u8) != 0, "Not authorized");
     }
 
     // ================== ADD / UPDATE ==================
@@ -79,28 +63,9 @@ pub contract PlanetStorage {
     fn set(id: Field, planet: Planet) {
         self.internal.assert_authorized();
         let block_number = self.context.block_number();
-        let (root, log) = PlanetUpdate::encode_update(id, block_number, planet);
+        let root = poseidon2_hash(planet.serialize());
         self.storage.state_roots.at(id).write(root);
-        let split_roots = if planet == Planet::zero() {
-            PlanetSplitRoots::zero()
-        } else {
-            let static_root = poseidon2_hash(planet.split_static().serialize());
-            let dynamic_root = poseidon2_hash(planet.split_dynamic().serialize());
-            let stats_root = poseidon2_hash(planet.split_stats().serialize());
-            let modifier_root = poseidon2_hash(planet.split_modifiers().serialize());
-            let composed_root =
-                poseidon2_hash([static_root, dynamic_root, stats_root, modifier_root]);
-            PlanetSplitRoots { static_root, dynamic_root, stats_root, modifier_root, composed_root }
-        };
-        self.storage.static_roots.at(id).write(split_roots.static_root);
-        self.storage.dynamic_roots.at(id).write(split_roots.dynamic_root);
-        self.storage.stats_roots.at(id).write(split_roots.stats_root);
-        self.storage.modifier_roots.at(id).write(split_roots.modifier_root);
-        self.storage.composed_roots.at(id).write(split_roots.composed_root);
-        unsafe {
-            aztec::oracle::avm::emit_public_log(log.as_vector());
-        }
-        self.emit(PlanetSplitRootsUpdate { id, block_number, state: split_roots });
+        self.emit(PlanetUpdate { id: id, block_number: block_number, state: planet });
     }
 
     // ================== ADMIN ==================
@@ -197,33 +162,6 @@ pub contract PlanetStorage {
     #[view]
     fn get_state_root(id: Field) -> Field {
         self.storage.state_roots.at(id).read()
-    }
-
-    #[external("public")]
-    #[view]
-    fn get_split_roots(id: Field) -> (Field, Field, Field, Field, Field) {
-        (
-            self.storage.static_roots.at(id).read(), self.storage.dynamic_roots.at(id).read(),
-            self.storage.stats_roots.at(id).read(), self.storage.modifier_roots.at(id).read(),
-            self.storage.composed_roots.at(id).read(),
-        )
-    }
-
-    #[external("public")]
-    #[view]
-    fn verify_split_roots(
-        id: Field,
-        static_root: Field,
-        dynamic_root: Field,
-        stats_root: Field,
-        modifier_root: Field,
-        composed_root: Field,
-    ) -> bool {
-        (self.storage.static_roots.at(id).read() == static_root)
-            & (self.storage.dynamic_roots.at(id).read() == dynamic_root)
-            & (self.storage.stats_roots.at(id).read() == stats_root)
-            & (self.storage.modifier_roots.at(id).read() == modifier_root)
-            & (self.storage.composed_roots.at(id).read() == composed_root)
     }
 
     #[external("public")]

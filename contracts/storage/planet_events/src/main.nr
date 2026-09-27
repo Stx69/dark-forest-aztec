@@ -1,7 +1,8 @@
 // Storage contract for planet events (events list + count per planet).
 // Only admin or authorized contracts can write; anyone can verify state by hash.
+use ::aztec::macros::aztec;
 
-#[::types::storage::state::game_contract]
+#[aztec]
 pub contract PlanetEventsStorage {
     use ::aztec::{
         macros::{
@@ -28,7 +29,6 @@ pub contract PlanetEventsStorage {
     }
 
     #[event]
-    #[::types::storage::state::state_update]
     struct PlanetEventsUpdate {
         id: Field,
         block_number: u32,
@@ -52,10 +52,9 @@ pub contract PlanetEventsStorage {
     #[internal("public")]
     fn assert_authorized() {
         let caller = self.msg_sender();
+        let is_admin = caller == self.storage.admin.read();
         let is_authorized = self.storage.authorized_map.at(caller).read();
-        if !is_authorized {
-            assert(caller == self.storage.admin.read(), "Not authorized");
-        }
+        assert((is_admin as u8) | (is_authorized as u8) != 0, "Not authorized");
     }
 
     // ================== ADD / UPDATE ==================
@@ -64,33 +63,9 @@ pub contract PlanetEventsStorage {
     fn set(id: Field, state: PlanetEvents) {
         self.internal.assert_authorized();
         let block_number = self.context.block_number();
-        let (root, log) = PlanetEventsUpdate::encode_update(id, block_number, state);
+        let root = poseidon2_hash(state.serialize());
         self.storage.state_roots.at(id).write(root);
-        unsafe {
-            aztec::oracle::avm::emit_public_log(log.as_vector());
-        }
-    }
-
-    /// Update several event queues in one public call. Empty tail entries are
-    /// ignored, while each changed slot retains its own state-update log.
-    #[external("public")]
-    fn set_batch(ids: [Field; 20], states: [PlanetEvents; 20], count: u32) {
-        self.internal.assert_authorized();
-        assert(count <= 20, "count exceeds batch size");
-        for i in 0..20 {
-            if i < count {
-                let id = ids[i];
-                let state = states[i];
-                let block_number = self.context.block_number();
-                let (root, log) = PlanetEventsUpdate::encode_update(id, block_number, state);
-                if self.storage.state_roots.at(id).read() != root {
-                    self.storage.state_roots.at(id).write(root);
-                    unsafe {
-                        aztec::oracle::avm::emit_public_log(log.as_vector());
-                    }
-                }
-            }
-        }
+        self.emit(PlanetEventsUpdate { id: id, block_number: block_number, state: state });
     }
 
     // ================== ADMIN ==================

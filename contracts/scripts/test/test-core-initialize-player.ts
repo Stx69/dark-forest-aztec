@@ -18,8 +18,11 @@
  */
 import { getPublicEvents } from '@aztec/aztec.js/events';
 import { BlockNumber } from '@aztec/foundation/branded-types';
+import { Gas } from '@aztec/stdlib/gas';
+import { getGasLimits } from '@aztec/wallet-sdk/base-wallet';
 
 import { unwrapSimulateResult } from '../utils/index.ts';
+import { logFeeMeasure } from './feeMeasureLog.ts';
 import {
     ensureZkDisabled,
     getTestContext,
@@ -458,11 +461,44 @@ async function main() {
     ] as const;
 
     console.log('   Simulating...');
+    let initGasUsed:
+        | Awaited<ReturnType<typeof Core.wallet.simulateTx>>['gasUsed']
+        | null = null;
     try {
-        await Core.methods
+        const initPayload = await Core.methods
             .initialize_player(...initPlayerArgs)
-            .simulate(sendOpts(user));
+            .request(sendOpts(user));
+        const txSimResult = await Core.wallet.simulateTx(initPayload, {
+            from: user,
+        });
+        initGasUsed = txSimResult.gasUsed;
+        const { txsLimits } = await ctx.node.getNodeInfo();
+        const suggestedLimits = getGasLimits(
+            initGasUsed,
+            Gas.from(txsLimits.gas),
+            0.1
+        );
         console.log('   ✅ Simulate passed.');
+        console.log('\n⛽ Gas used:');
+        console.log(
+            `   totalGas:  DA=${initGasUsed.totalGas.daGas}  L2=${initGasUsed.totalGas.l2Gas}`
+        );
+        console.log(
+            `   teardown:  DA=${initGasUsed.teardownGas.daGas}  L2=${initGasUsed.teardownGas.l2Gas}`
+        );
+        console.log(
+            `   publicGas: DA=${initGasUsed.publicGas.daGas}  L2=${initGasUsed.publicGas.l2Gas}`
+        );
+        console.log(
+            `   billedGas: DA=${initGasUsed.billedGas.daGas}  L2=${initGasUsed.billedGas.l2Gas}`
+        );
+        console.log('\n⛽ Suggested gas limits (10% pad):');
+        console.log(
+            `   gasLimits:         DA=${suggestedLimits.gasLimits.daGas}  L2=${suggestedLimits.gasLimits.l2Gas}`
+        );
+        console.log(
+            `   teardownGasLimits: DA=${suggestedLimits.teardownGasLimits.daGas}  L2=${suggestedLimits.teardownGasLimits.l2Gas}`
+        );
     } catch (simErr: unknown) {
         const msg = simErr instanceof Error ? simErr.message : String(simErr);
         console.error('   ❌ Simulate failed:', msg);
@@ -476,6 +512,7 @@ async function main() {
         const { receipt } = await Core.methods
             .initialize_player(...initPlayerArgs)
             .send(sendOpts(user));
+        logFeeMeasure('initialize_player', initGasUsed, receipt);
         const blockNumber =
             receipt &&
             typeof (receipt as { blockNumber?: number }).blockNumber !==

@@ -1,0 +1,134 @@
+{
+  "devkit": {
+    "commit": "87c7be3518356d4859c87aea6f023cc0d0a4d21a",
+    "measured_at": "2026-09-27T18:21:06.761Z",
+    "functions": [
+      {
+        "name": "initialize_player",
+        "total_da": "2496",
+        "total_l2": "1049559",
+        "public_da": "2368",
+        "public_l2": "458759",
+        "billed_da": "2496",
+        "billed_l2": "1049559",
+        "teardown_da": "0",
+        "teardown_l2": "0",
+        "fee": "10705501800000"
+      },
+      {
+        "name": "give_spaceships",
+        "total_da": "9152",
+        "total_l2": "1965690",
+        "public_da": "9024",
+        "public_l2": "1374890",
+        "billed_da": "9152",
+        "billed_l2": "1965690",
+        "teardown_da": "0",
+        "teardown_l2": "0",
+        "fee": "20050038000000"
+      },
+      {
+        "name": "move",
+        "total_da": "8512",
+        "total_l2": "2305197",
+        "public_da": "8384",
+        "public_l2": "1714397",
+        "billed_da": "8512",
+        "billed_l2": "2305197",
+        "teardown_da": "0",
+        "teardown_l2": "0",
+        "fee": "23513009400000"
+      },
+      {
+        "name": "upgrade_planet",
+        "total_da": "3872",
+        "total_l2": "1328072",
+        "public_da": "3744",
+        "public_l2": "737272",
+        "billed_da": "3872",
+        "billed_l2": "1328072",
+        "teardown_da": "0",
+        "teardown_l2": "0",
+        "fee": "13546334400000"
+      },
+      {
+        "name": "withdraw_silver",
+        "total_da": "4352",
+        "total_l2": "1382314",
+        "public_da": "4224",
+        "public_l2": "791514",
+        "billed_da": "4352",
+        "billed_l2": "1382314",
+        "teardown_da": "0",
+        "teardown_l2": "0",
+        "fee": "14099602800000"
+      }
+    ]
+  },
+  "devkitMain": {
+    "commit": "87c7be3518356d4859c87aea6f023cc0d0a4d21a+main-storage-style",
+    "measured_at": "2026-09-27T18:34:22.264Z",
+    "functions": [
+      {
+        "name": "initialize_player",
+        "total_da": "1856",
+        "total_l2": "1028414",
+        "public_da": "1728",
+        "public_l2": "437614",
+        "billed_da": "1856",
+        "billed_l2": "1028414",
+        "teardown_da": "0",
+        "teardown_l2": "0",
+        "fee": "10489822800000"
+      },
+      {
+        "name": "give_spaceships",
+        "total_da": "8512",
+        "total_l2": "2655419",
+        "public_da": "8384",
+        "public_l2": "2064619",
+        "billed_da": "8512",
+        "billed_l2": "2655419",
+        "teardown_da": "0",
+        "teardown_l2": "0",
+        "fee": "27085273800000"
+      },
+      {
+        "name": "move",
+        "total_da": "7680",
+        "total_l2": "3782976",
+        "public_da": "7552",
+        "public_l2": "3192176",
+        "billed_da": "7680",
+        "billed_l2": "3782976",
+        "teardown_da": "0",
+        "teardown_l2": "0",
+        "fee": "38586355200000"
+      },
+      {
+        "name": "upgrade_planet",
+        "total_da": "3232",
+        "total_l2": "1949767",
+        "public_da": "3104",
+        "public_l2": "1358967",
+        "billed_da": "3232",
+        "billed_l2": "1949767",
+        "teardown_da": "0",
+        "teardown_l2": "0",
+        "fee": "19887623400000"
+      },
+      {
+        "name": "withdraw_silver",
+        "total_da": "3712",
+        "total_l2": "2008785",
+        "public_da": "3584",
+        "public_l2": "1417985",
+        "billed_da": "3712",
+        "billed_l2": "2008785",
+        "teardown_da": "0",
+        "teardown_l2": "0",
+        "fee": "20489607000000"
+      }
+    ]
+  }
+}

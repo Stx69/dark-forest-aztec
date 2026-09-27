@@ -1,4 +1,6 @@
-#[::types::storage::state::game_contract]
+use ::aztec::macros::aztec;
+
+#[aztec]
 pub contract Config {
     use ::aztec::{
         macros::{functions::{external, initializer, internal, view}, storage::storage},

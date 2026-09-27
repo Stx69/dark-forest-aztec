@@ -19,6 +19,7 @@ import { Gas } from '@aztec/stdlib/gas';
 import { getGasLimits } from '@aztec/wallet-sdk/base-wallet';
 
 import { unwrapSimulateResult } from '../utils/index.ts';
+import { logFeeMeasure } from './feeMeasureLog.ts';
 import {
     getTestContext,
     sendTimestampRefreshTx,
@@ -661,6 +662,9 @@ async function main() {
     console.log('\n🎮 Calling Move.move() (private)...');
     console.log('   pop_moved:', String(popMoved), 'silver_moved: 0');
 
+    let gasUsed:
+        | Awaited<ReturnType<typeof Move.wallet.simulateTx>>['gasUsed']
+        | null = null;
     try {
         const movePayload = await Move.methods
             .move(...moveArgs)
@@ -670,7 +674,7 @@ async function main() {
         });
         console.log('   ✅ Simulate passed.');
 
-        const gasUsed = txSimResult.gasUsed;
+        gasUsed = txSimResult.gasUsed;
         const { txsLimits } = await ctx.node.getNodeInfo();
         const suggestedLimits = getGasLimits(
             gasUsed,
@@ -721,6 +725,7 @@ async function main() {
             (receipt as unknown as { txHash?: unknown }).txHash != null
                 ? String((receipt as unknown as { txHash: unknown }).txHash)
                 : undefined;
+        logFeeMeasure('move', gasUsed, receipt);
 
         console.log('\n' + '='.repeat(60));
         console.log('✅ TEST SUCCESS — move committed');

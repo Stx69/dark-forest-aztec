@@ -1,4 +1,6 @@
-#[::types::storage::state::game_contract]
+use ::aztec::macros::aztec;
+
+#[aztec]
 contract ArtifactValut {
     use ::aztec::{
         macros::{functions::{external, initializer, internal, only_self, view}, storage::storage},

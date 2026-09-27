@@ -1,4 +1,6 @@
-#[::types::storage::state::game_contract]
+use ::aztec::macros::aztec;
+
+#[aztec]
 contract Move {
     use ::aztec::{
         macros::{
