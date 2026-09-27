@@ -33,6 +33,32 @@ pub fn compute_planet_state_hash(planet: Planet) -> Field {
 /// The legacy full-Planet root remains available above for replaying old
 /// events. The composed root is domain-separated by its four child roots and
 /// is zero only for the zero Planet, preserving the existing absence marker.
+/// Bits for `PlanetStorage.set_slices`. A set bit means that slice differs
+/// from the planet already authenticated by `state_roots`.
+pub global PLANET_SLICE_STATIC: u8 = 1;
+pub global PLANET_SLICE_DYNAMIC: u8 = 2;
+pub global PLANET_SLICE_STATS: u8 = 4;
+pub global PLANET_SLICE_MODIFIERS: u8 = 8;
+
+/// Field comparison of the four planet slices. Callers pass this mask into
+/// `set_slices` so public execution hashes only the slices that changed.
+pub fn planet_slice_mask(before: Planet, after: Planet) -> u8 {
+    let mut mask: u8 = 0;
+    if before.split_static() != after.split_static() {
+        mask |= PLANET_SLICE_STATIC;
+    }
+    if before.split_dynamic() != after.split_dynamic() {
+        mask |= PLANET_SLICE_DYNAMIC;
+    }
+    if before.split_stats() != after.split_stats() {
+        mask |= PLANET_SLICE_STATS;
+    }
+    if before.split_modifiers() != after.split_modifiers() {
+        mask |= PLANET_SLICE_MODIFIERS;
+    }
+    mask
+}
+
 pub fn compute_planet_split_roots(planet: Planet) -> (Field, Field, Field, Field, Field) {
     if planet == Planet::zero() {
         (0, 0, 0, 0, 0)

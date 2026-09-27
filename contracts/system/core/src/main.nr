@@ -40,7 +40,7 @@ contract Core {
     use ::libs::batch_utils::{
         assert_planet_timestamp_freshness, assert_public_timestamp, compute_config_hashes,
         compute_planet_hashes, compute_planet_revealed_coords_hash, compute_planet_state_hash,
-        compute_player_hash, compute_world_hash,
+        compute_player_hash, compute_world_hash, planet_slice_mask,
     };
     use ::libs::game_utils::{_buff_planet, revert_if_bad_snark_perlin_flags};
 
@@ -447,6 +447,8 @@ contract Core {
             }
         }
 
+        let slice_mask = planet_slice_mask(planet_state, new_planet);
+
         self.enqueue_self.upgrade_planet_public(
             location,
             sender,
@@ -469,6 +471,7 @@ contract Core {
             new_planet_events_state,
             new_planet_artifacts_state,
             new_arrival_artifact_locations,
+            slice_mask,
         );
     }
 
@@ -496,6 +499,7 @@ contract Core {
         new_planet_events_state: PlanetEvents,
         new_planet_artifacts_state: PlanetArtifacts,
         new_arrival_artifact_locations: [ArtifactLocation; 20],
+        slice_mask: u8,
     ) {
         let actual_timestamp = self.context.timestamp();
         assert_public_timestamp(timestamp, actual_timestamp);
@@ -525,30 +529,32 @@ contract Core {
             "Planet events state hash mismatch",
         );
 
-        assert(
-            self.view(arrival_storage.verify_hashes_batch(
-                arrival_ids,
-                arrival_hashes,
-                original_arrivals_count,
-            )),
-            "Arrival hash mismatch",
-        );
-        assert(
-            self.view(artifact_storage.verify_hashes_batch(
-                arrival_artifact_ids,
-                arrival_artifact_hashes,
-                original_arrivals_count,
-            )),
-            "Artifact hash mismatch",
-        );
-        assert(
-            self.view(artifact_location_storage.verify_hashes_batch(
-                arrival_artifact_ids,
-                arrival_artifact_location_hashes,
-                original_arrivals_count,
-            )),
-            "Artifact location hash mismatch",
-        );
+        if original_arrivals_count > 0 {
+            assert(
+                self.view(arrival_storage.verify_hashes_batch(
+                    arrival_ids,
+                    arrival_hashes,
+                    original_arrivals_count,
+                )),
+                "Arrival hash mismatch",
+            );
+            assert(
+                self.view(artifact_storage.verify_hashes_batch(
+                    arrival_artifact_ids,
+                    arrival_artifact_hashes,
+                    original_arrivals_count,
+                )),
+                "Artifact hash mismatch",
+            );
+            assert(
+                self.view(artifact_location_storage.verify_hashes_batch(
+                    arrival_artifact_ids,
+                    arrival_artifact_location_hashes,
+                    original_arrivals_count,
+                )),
+                "Artifact location hash mismatch",
+            );
+        }
 
         assert(
             self.view(config.verify_upgrade_config_hash(upgrade_config_hash)),
@@ -567,14 +573,16 @@ contract Core {
         assert(self.view(world_storage.verify_hash(0, world_hash)), "World state hash mismatch");
 
         assert(new_planet.owner == sender, "Planet owner mismatch");
-        self.call(planet_storage.set(location, new_planet));
+        self.call(planet_storage.set_slices(location, new_planet, slice_mask));
         self.call(planet_events_storage.set(location, new_planet_events_state));
         self.call(planet_artifacts_storage.set(location, new_planet_artifacts_state));
-        self.call(artifact_location_storage.set_arrival_locations_max20(
-            arrival_artifact_ids,
-            new_arrival_artifact_locations,
-            original_arrivals_count,
-        ));
+        if original_arrivals_count > 0 {
+            self.call(artifact_location_storage.set_arrival_locations_max20(
+                arrival_artifact_ids,
+                new_arrival_artifact_locations,
+                original_arrivals_count,
+            ));
+        }
     }
 
     #[external("private")]
@@ -669,6 +677,8 @@ contract Core {
         }
         new_player.last_updated = timestamp;
 
+        let slice_mask = planet_slice_mask(planet_state, new_planet);
+
         self.enqueue_self.withdraw_silver_public(
             location,
             sender,
@@ -690,6 +700,7 @@ contract Core {
             new_planet_artifacts_state,
             new_arrival_artifact_locations,
             new_player,
+            slice_mask,
         );
     }
 
@@ -716,6 +727,7 @@ contract Core {
         new_planet_artifacts_state: PlanetArtifacts,
         new_arrival_artifact_locations: [ArtifactLocation; 20],
         new_player: Player,
+        slice_mask: u8,
     ) {
         let actual_timestamp = self.context.timestamp();
         assert_public_timestamp(timestamp, actual_timestamp);
@@ -751,30 +763,32 @@ contract Core {
             "Planet events state hash mismatch",
         );
 
-        assert(
-            self.view(arrival_storage.verify_hashes_batch(
-                arrival_ids,
-                arrival_hashes,
-                original_arrivals_count,
-            )),
-            "Arrival hash mismatch",
-        );
-        assert(
-            self.view(artifact_storage.verify_hashes_batch(
-                arrival_artifact_ids,
-                arrival_artifact_hashes,
-                original_arrivals_count,
-            )),
-            "Artifact hash mismatch",
-        );
-        assert(
-            self.view(artifact_location_storage.verify_hashes_batch(
-                arrival_artifact_ids,
-                arrival_artifact_location_hashes,
-                original_arrivals_count,
-            )),
-            "Artifact location hash mismatch",
-        );
+        if original_arrivals_count > 0 {
+            assert(
+                self.view(arrival_storage.verify_hashes_batch(
+                    arrival_ids,
+                    arrival_hashes,
+                    original_arrivals_count,
+                )),
+                "Arrival hash mismatch",
+            );
+            assert(
+                self.view(artifact_storage.verify_hashes_batch(
+                    arrival_artifact_ids,
+                    arrival_artifact_hashes,
+                    original_arrivals_count,
+                )),
+                "Artifact hash mismatch",
+            );
+            assert(
+                self.view(artifact_location_storage.verify_hashes_batch(
+                    arrival_artifact_ids,
+                    arrival_artifact_location_hashes,
+                    original_arrivals_count,
+                )),
+                "Artifact location hash mismatch",
+            );
+        }
 
         assert(
             self.view(player_storage.verify_hash(sender, player_state_hash)),
@@ -783,14 +797,16 @@ contract Core {
 
         assert(self.view(world_storage.verify_hash(0, world_hash)), "World state hash mismatch");
 
-        self.call(planet_storage.set(location, new_planet));
+        self.call(planet_storage.set_slices(location, new_planet, slice_mask));
         self.call(planet_events_storage.set(location, new_planet_events_state));
         self.call(planet_artifacts_storage.set(location, new_planet_artifacts_state));
-        self.call(artifact_location_storage.set_arrival_locations_max20(
-            arrival_artifact_ids,
-            new_arrival_artifact_locations,
-            original_arrivals_count,
-        ));
+        if original_arrivals_count > 0 {
+            self.call(artifact_location_storage.set_arrival_locations_max20(
+                arrival_artifact_ids,
+                new_arrival_artifact_locations,
+                original_arrivals_count,
+            ));
+        }
         self.call(player_storage.set(sender, new_player));
     }
 
