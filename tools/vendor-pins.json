@@ -14,12 +14,12 @@
     {
       "path": "tools/blockscout/backend",
       "url": "https://github.com/Stx69/blockscout.git",
-      "commit": "dfb6327aacd332564f81fe46917bf62c27a24547"
+      "commit": "e19285aa1c067c4c6d74355866a5e1cecdf4f76a"
     },
     {
       "path": "tools/blockscout/frontend",
       "url": "https://github.com/Stx69/blockscout-frontend.git",
-      "commit": "2a286cfdfe0389a56a1063720c9aa2001f965eef"
+      "commit": "f31ca88aede31e2c9e0f6bc7c022d7b0c4724964"
     },
     {
       "path": "tools/aztec-explorer",

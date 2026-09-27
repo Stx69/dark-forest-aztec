@@ -57,6 +57,17 @@ mix local.rebar --force
 echo "[mprocs-blockscout] mix deps.unlock/get for patched phoenix 1.6.17, mint 1.10.1, decimal 3.1"
 mix deps.unlock phoenix mint decimal
 mix deps.get
+# Elixir 1.19 warns when Phoenix calls Endpoint.__sockets__ without parentheses.
+python3 - <<'PY'
+import pathlib
+path = pathlib.Path("deps/phoenix/lib/phoenix/endpoint/supervisor.ex")
+text = path.read_text()
+old = "    endpoint.__sockets__\n"
+new = "    endpoint.__sockets__()\n"
+if old not in text and new not in text:
+    raise SystemExit("phoenix socket_children call site not found")
+path.write_text(text.replace(old, new, 1))
+PY
 mix compile
 CERT_DIR="${BACKEND}/apps/block_scout_web/priv/cert"
 BUILD_CERT="${BACKEND}/_build/dev/lib/block_scout_web/priv/cert"
@@ -99,7 +110,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-echo "[mprocs-blockscout] API http://127.0.0.1:${API_PORT}  UI http://127.0.0.1:${UI_PORT}"
+echo "[mprocs-blockscout] API http://localhost:${API_PORT}  UI http://localhost:${UI_PORT}"
 cd "${BACKEND}"
 mix phx.server &
 BACKEND_PID=$!
