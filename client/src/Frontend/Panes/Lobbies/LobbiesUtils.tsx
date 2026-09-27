@@ -2,7 +2,7 @@
 import { Initializers } from "@dfpunk/settings";
 import { EthAddress } from "@dfpunk/types";
 import React from "react";
-import { useHistory, useRouteMatch } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
 import { Btn, ShortcutBtn } from "../../Components/Btn";
@@ -29,11 +29,12 @@ export function LinkButton({
   shortcut,
   children,
 }: React.PropsWithChildren<{ to: string; shortcut?: string }>) {
-  const { url } = useRouteMatch();
-  const history = useHistory();
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
 
-  function navigate() {
-    history.push(`${url}${to}`);
+  function go() {
+    const base = pathname.replace(/\/$/, "");
+    navigate(`${base}${to}`);
   }
 
   // Adding className="button" so ButtonRow will add the flex stuff
@@ -41,8 +42,8 @@ export function LinkButton({
     <ShortcutBtn
       className="button"
       size="stretch"
-      onClick={navigate}
-      onShortcutPressed={navigate}
+      onClick={go}
+      onShortcutPressed={go}
       shortcutKey={shortcut}
       shortcutText={shortcut}
     >
@@ -54,12 +55,12 @@ export function LinkButton({
 export function NavigationTitle({
   children,
 }: React.PropsWithChildren<unknown>) {
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const shortcut = "t";
 
   function goBack() {
-    history.goBack();
+    navigate(-1);
   }
 
   return (

@@ -41,11 +41,11 @@
         "test:env": "pnpm exec tsx scripts/test/test-env.ts",
         "test:fee-payment": "pnpm exec tsx scripts/test/test-fee-payment.ts",
         "test:moveProof": "pnpm exec tsx scripts/test/test-moveProof.ts",
+        "test:superboost": "aztec-nargo test --package libs --silence-warnings",
+        "test:types": "aztec-nargo test --package types --silence-warnings",
         "timestamp-ticker": "pnpm exec tsx scripts/dev/timestamp-ticker.ts",
         "update-config": "pnpm exec tsx scripts/dev/update-config.ts",
-        "verify-perms": "pnpm exec tsx scripts/deploy/verify-storage-permissions.ts",
-        "test:superboost": "aztec-nargo test --package libs --silence-warnings",
-        "test:types": "aztec-nargo test --package types --silence-warnings"
+        "verify-perms": "pnpm exec tsx scripts/deploy/verify-storage-permissions.ts"
     },
     "dependencies": {
         "@dfpunk/hashing": "workspace:*",

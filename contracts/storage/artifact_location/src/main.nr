@@ -80,7 +80,8 @@ pub contract ArtifactLocationStorage {
         let block_number = self.context.block_number();
         for i in 0..20 {
             if (i < count) & (ids[i] != 0) {
-                let (root, log) = ArtifactLocationUpdate::encode_update(ids[i], block_number, states[i]);
+                let (root, log) =
+                    ArtifactLocationUpdate::encode_update(ids[i], block_number, states[i]);
                 self.storage.state_roots.at(ids[i]).write(root);
                 unsafe {
                     aztec::oracle::avm::emit_public_log(log.as_vector());

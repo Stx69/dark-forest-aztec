@@ -1234,6 +1234,10 @@ class GameUIManager extends EventEmitter {
     return this.gameManager.getChainTimeMs();
   }
 
+  public getEstimatedChainTimeMs(): number {
+    return this.gameManager.getEstimatedChainTimeMs();
+  }
+
   public getNaturalTimeMs(): number {
     return this.gameManager.getNaturalTimeMs();
   }

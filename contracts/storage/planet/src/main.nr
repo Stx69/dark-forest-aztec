@@ -88,12 +88,8 @@ pub contract PlanetStorage {
             let dynamic_root = poseidon2_hash(planet.split_dynamic().serialize());
             let stats_root = poseidon2_hash(planet.split_stats().serialize());
             let modifier_root = poseidon2_hash(planet.split_modifiers().serialize());
-            let composed_root = poseidon2_hash([
-                static_root,
-                dynamic_root,
-                stats_root,
-                modifier_root,
-            ]);
+            let composed_root =
+                poseidon2_hash([static_root, dynamic_root, stats_root, modifier_root]);
             PlanetSplitRoots { static_root, dynamic_root, stats_root, modifier_root, composed_root }
         };
         self.storage.static_roots.at(id).write(split_roots.static_root);
@@ -207,10 +203,8 @@ pub contract PlanetStorage {
     #[view]
     fn get_split_roots(id: Field) -> (Field, Field, Field, Field, Field) {
         (
-            self.storage.static_roots.at(id).read(),
-            self.storage.dynamic_roots.at(id).read(),
-            self.storage.stats_roots.at(id).read(),
-            self.storage.modifier_roots.at(id).read(),
+            self.storage.static_roots.at(id).read(), self.storage.dynamic_roots.at(id).read(),
+            self.storage.stats_roots.at(id).read(), self.storage.modifier_roots.at(id).read(),
             self.storage.composed_roots.at(id).read(),
         )
     }

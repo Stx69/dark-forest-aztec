@@ -158,6 +158,8 @@ export interface RendererGameContext extends DiagnosticUpdater {
   getArtifactSending(planetId: LocationId): Artifact | undefined;
   getAbandonRangeChangePercent(): number;
   getChainTimeMs(): number;
+  /** Chain time plus wall-clock elapsed since the last block sync. */
+  getEstimatedChainTimeMs(): number;
   /** Wall-clock time in milliseconds for cosmetic animations (e.g. artifact orbit). */
   getNaturalTimeMs(): number;
   // getCaptureZones(): Iterable<CaptureZone>;
@@ -244,7 +246,7 @@ export class Renderer {
     this.viewport = viewport;
 
     this.frameCount = 0;
-    const chainMs = this.context.getChainTimeMs();
+    const chainMs = this.context.getEstimatedChainTimeMs();
     this.now = chainMs > 0 ? chainMs : Date.now();
     this.naturalNow = this.context.getNaturalTimeMs();
     this.config = config;
@@ -333,7 +335,7 @@ export class Renderer {
 
   private loop() {
     this.frameCount++;
-    const chainMs = this.context.getChainTimeMs();
+    const chainMs = this.context.getEstimatedChainTimeMs();
     this.now = chainMs > 0 ? chainMs : Date.now();
     this.naturalNow = this.context.getNaturalTimeMs();
     this.draw();

@@ -33,9 +33,7 @@ pub fn compute_planet_state_hash(planet: Planet) -> Field {
 /// The legacy full-Planet root remains available above for replaying old
 /// events. The composed root is domain-separated by its four child roots and
 /// is zero only for the zero Planet, preserving the existing absence marker.
-pub fn compute_planet_split_roots(
-    planet: Planet,
-) -> (Field, Field, Field, Field, Field) {
+pub fn compute_planet_split_roots(planet: Planet) -> (Field, Field, Field, Field, Field) {
     if planet == Planet::zero() {
         (0, 0, 0, 0, 0)
     } else {
@@ -43,12 +41,7 @@ pub fn compute_planet_split_roots(
         let dynamic_root = poseidon2_hash(planet.split_dynamic().serialize());
         let stats_root = poseidon2_hash(planet.split_stats().serialize());
         let modifiers_root = poseidon2_hash(planet.split_modifiers().serialize());
-        let composed_root = poseidon2_hash([
-            static_root,
-            dynamic_root,
-            stats_root,
-            modifiers_root,
-        ]);
+        let composed_root = poseidon2_hash([static_root, dynamic_root, stats_root, modifiers_root]);
         (static_root, dynamic_root, stats_root, modifiers_root, composed_root)
     }
 }

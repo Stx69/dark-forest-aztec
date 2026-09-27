@@ -3,7 +3,7 @@
  * so you can get correct timestamps when testing.
  *
  * Usage: node --experimental-transform-types scripts/dev/timestamp-ticker.ts [intervalSeconds]
- *   intervalSeconds: interval in seconds (default 120)
+ *   intervalSeconds: interval in seconds (default 12)
  *
  * Prerequisites: deploy + configure done, .env has ACCOUNT_* and ADMIN_CONTRACT_ADDRESS
  */
@@ -26,7 +26,8 @@ loadContractsEnv();
 
 const AZTEC_NODE_URL = getAztecNodeUrl();
 const PROVER_ENABLED = getProverEnabled();
-const INTERVAL_SEC = parseInt(process.argv[2] || '120', 10) || 120;
+const INTERVAL_SEC = parseInt(process.argv[2] || '12', 10) || 12;
+const SEND_TIMEOUT_MS = 20_000;
 
 const CONTRACT_SPECS = [
     {
@@ -77,26 +78,54 @@ async function main() {
     });
 
     let count = 0;
-    const run = async () => {
-        count++;
-        const blockBefore = await aztecNode.getBlockNumber();
-        try {
-            await Admin.methods.transfer_admin(admin).send(sendOpts());
-            const blockAfter = await aztecNode.getBlockNumber();
-            const ts = new Date().toISOString();
-            console.log(
-                `[${ts}] #${count} tx sent — block ${blockBefore} → ${blockAfter}`
-            );
-        } catch (e) {
-            console.error(
-                `[${new Date().toISOString()}] #${count} failed:`,
-                e instanceof Error ? e.message : e
-            );
-        }
-    };
+    let inFlight = false;
+    const sleep = (ms: number) =>
+        new Promise((resolve) => setTimeout(resolve, ms));
 
-    await run(); // send first tx immediately
-    setInterval(run, INTERVAL_SEC * 1000);
+    while (true) {
+        const started = Date.now();
+        count++;
+        if (inFlight) {
+            console.log(
+                `[${new Date().toISOString()}] #${count} skipped — previous tick still sending`
+            );
+        } else {
+            inFlight = true;
+            const tick = count;
+            void (async () => {
+                const ts = new Date().toISOString();
+                console.log(`[${ts}] #${tick} sending admin no-op`);
+                try {
+                    const blockBefore = await aztecNode.getBlockNumber();
+                    const sent = Admin.methods
+                        .transfer_admin(admin)
+                        .send(sendOpts());
+                    await Promise.race([
+                        sent,
+                        sleep(SEND_TIMEOUT_MS).then(() => {
+                            throw new Error(
+                                `send still waiting after ${SEND_TIMEOUT_MS / 1000}s`
+                            );
+                        }),
+                    ]);
+                    const blockAfter = await aztecNode.getBlockNumber();
+                    console.log(
+                        `[${new Date().toISOString()}] #${tick} tx sent — block ${blockBefore} → ${blockAfter}`
+                    );
+                } catch (e) {
+                    console.error(
+                        `[${new Date().toISOString()}] #${tick} failed:`,
+                        e instanceof Error ? e.message : e
+                    );
+                } finally {
+                    inFlight = false;
+                }
+            })();
+        }
+
+        const elapsed = Date.now() - started;
+        await sleep(Math.max(0, INTERVAL_SEC * 1000 - elapsed));
+    }
 }
 
 main().catch((e) => {

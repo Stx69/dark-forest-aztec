@@ -1,0 +1,30 @@
+{
+  "clones": [
+    {
+      "path": "tools/otherscan",
+      "url": "https://github.com/Stx69/otterscan.git",
+      "commit": "b43f5573801fb2d28deb3a026e4c5140b8ed33f7",
+      "overlay": "tools/overlays/otherscan"
+    },
+    {
+      "path": "tools/presto",
+      "url": "https://github.com/Stx69/presto.git",
+      "commit": "e8dc31d19761e1f69993dff33dd99a4401c324d4"
+    },
+    {
+      "path": "tools/blockscout/backend",
+      "url": "https://github.com/Stx69/blockscout.git",
+      "commit": "dfb6327aacd332564f81fe46917bf62c27a24547"
+    },
+    {
+      "path": "tools/blockscout/frontend",
+      "url": "https://github.com/Stx69/blockscout-frontend.git",
+      "commit": "2a286cfdfe0389a56a1063720c9aa2001f965eef"
+    },
+    {
+      "path": "tools/aztec-explorer",
+      "url": "https://github.com/Stx69/aztec-explorer.git",
+      "commit": "ceced357d407090dce7ee356423e57953031491c"
+    }
+  ]
+}

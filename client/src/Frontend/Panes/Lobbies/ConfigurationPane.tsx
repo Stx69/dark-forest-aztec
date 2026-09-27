@@ -1,7 +1,7 @@
 import { EthAddress } from "@dfpunk/types";
 import _ from "lodash";
 import React, { useEffect, useReducer, useState } from "react";
-import { Route, Switch, useRouteMatch } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 import { Btn } from "../../Components/Btn";
 import { Spacer, Title } from "../../Components/CoreUI";

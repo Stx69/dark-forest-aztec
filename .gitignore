@@ -112,6 +112,15 @@ CLAUDE.md
 tmp/
 temp/
 .cache/
+.mprocs/
+tools/otherscan/
+tools/aztec-explorer/
+tools/presto/
+tools/blockscout/upstream/
+tools/blockscout/backend/
+tools/blockscout/frontend/
+tools/blockscout/.toolchain/
+tools/blockscout/.data/
 
 ############################################
 # Netlify

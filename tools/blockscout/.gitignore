@@ -1,0 +1,6 @@
+upstream/
+backend/
+frontend/
+.toolchain/
+.data/
+**/*.log

@@ -379,12 +379,7 @@ pub fn refresh_planet_v1(
     // assert(planet.is_initialized, "Planet is not initialized");
 
     let result = if planet_events_state.count == 0 {
-        (
-            update_planet(timestamp, planet),
-            PlanetEvents::zero(),
-            PlanetArtifacts::zero(),
-            [0; 20],
-        )
+        (update_planet(timestamp, planet), PlanetEvents::zero(), PlanetArtifacts::zero(), [0; 20])
     } else {
         get_refreshed_planet(
             location_id,
@@ -460,9 +455,7 @@ pub fn refresh_planet_v2(
 
     let result = if new_planet_events_state.count == 0 {
         (
-            update_planet(timestamp, new_planet),
-            PlanetEvents::zero(),
-            PlanetArtifacts::zero(),
+            update_planet(timestamp, new_planet), PlanetEvents::zero(), PlanetArtifacts::zero(),
             [0; 20],
         )
     } else {

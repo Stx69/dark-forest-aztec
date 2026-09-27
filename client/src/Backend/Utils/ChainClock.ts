@@ -69,9 +69,22 @@ export class ChainClock {
   /**
    * Current chain time in milliseconds (latest L2 block timestamp from last sync).
    * Caller must have triggered at least one sync (e.g. at init) before using.
+   * Does not advance between blocks. Game logic (arrivals, energy) must use this.
    */
   now(): number {
     return this.lastChainTimestampSec * 1000;
+  }
+
+  /**
+   * Chain time extrapolated with wall-clock elapsed since the last sync.
+   * Cosmetic only (voyage marker interpolation). Stays aligned with `now()`
+   * at each block, then moves continuously until the next sync.
+   */
+  estimatedNow(): number {
+    if (this.lastChainTimestampSec <= 0 || this.lastSyncMs <= 0) {
+      return Date.now();
+    }
+    return this.lastChainTimestampSec * 1000 + (Date.now() - this.lastSyncMs);
   }
 
   /** Current chain-adjusted time in seconds. */

@@ -1460,6 +1460,11 @@ class GameManager extends EventEmitter {
     return this.chainClock.now();
   }
 
+  /** Interpolated chain time for voyage drawing between block syncs. */
+  public getEstimatedChainTimeMs(): number {
+    return this.chainClock.estimatedNow();
+  }
+
   /** Wall-clock time in milliseconds for cosmetic animations (e.g. artifact orbit). */
   public getNaturalTimeMs(): number {
     return Date.now();

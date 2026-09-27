@@ -1,4 +1,5 @@
 // Exercise the real Noir implementation against the frozen pre-optimization code.
+use crate::batch_utils::compute_planet_split_roots;
 use ::aztec::protocol::address::AztecAddress;
 use ::aztec::protocol::traits::FromField;
 use ::types::storage::{
@@ -6,7 +7,6 @@ use ::types::storage::{
     artifact::{Artifact, ArtifactLocation, ArtifactType},
     planet::{Planet, PlanetArtifacts, PlanetEvents, PlanetType},
 };
-use crate::batch_utils::compute_planet_split_roots;
 
 fn check_refresh(count: u32, timestamp: u64, destroyed: bool, with_artifacts: bool) {
     let mut planet = Planet::zero();

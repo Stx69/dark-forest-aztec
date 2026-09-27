@@ -16,6 +16,7 @@ Required versions:
 - `server/` - off-chain indexer server with SQLite persistence and snapshot APIs.
 - `packages/` - shared `@dfpunk/*` packages used across the client, contracts scripts, and server.
 - `docs/` - project-level setup, architecture, and developer guides.
+- `tools/` - local-only extras (Otterscan, Aztec explorer, Presto, Blockscout). Blockscout for Anvil L1 is Mix + Next on the host (no Docker, no Cargo); see `tools/blockscout/README.md`.
 
 ## Working Style
 
