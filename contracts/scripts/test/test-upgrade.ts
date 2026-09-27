@@ -15,6 +15,7 @@ import { Gas } from '@aztec/stdlib/gas';
 import { getGasLimits } from '@aztec/wallet-sdk/base-wallet';
 
 import { unwrapSimulateResult } from '../utils/index.ts';
+import { logFeeMeasure } from './feeMeasureLog.ts';
 import {
     getTestContext,
     sendTimestampRefreshTx,
@@ -967,6 +968,7 @@ async function main() {
     console.log(
         `   teardownGasLimits: DA=${suggestedLimits.teardownGasLimits.daGas}  L2=${suggestedLimits.teardownGasLimits.l2Gas}`
     );
+    logFeeMeasure('upgrade_planet', gasUsed, receipt);
 
     const beforeSilver = toBigint(state.planet.silver);
     const beforeUpgrade0 = toBigint(state.planet.upgrade_state_0);
