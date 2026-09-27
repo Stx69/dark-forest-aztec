@@ -19,7 +19,7 @@
     {
       "path": "tools/blockscout/frontend",
       "url": "https://github.com/Stx69/blockscout-frontend.git",
-      "commit": "f31ca88aede31e2c9e0f6bc7c022d7b0c4724964"
+      "commit": "757860585c221e601ac9321df148fa175bc69d31"
     },
     {
       "path": "tools/aztec-explorer",
