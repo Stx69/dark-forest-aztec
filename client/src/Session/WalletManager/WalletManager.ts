@@ -322,6 +322,41 @@ async function registerSponsoredFpcWithWallet(
   return sponsoredFPC.address;
 }
 
+/**
+ * The accelerator probes HTTP and HTTPS together. Headless Presto only listens on HTTP,
+ * so the HTTPS probe (port + 1) shows up as a refused connection. Reject that URL in
+ * fetch before the browser opens it. HTTP proving is unchanged.
+ */
+function skipHeadlessHttpsHealthProbe(proverUrl: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(proverUrl);
+  } catch {
+    return;
+  }
+  if (parsed.protocol !== "http:") return;
+  const httpsPort = (Number.parseInt(parsed.port, 10) || 59833) + 1;
+  const prefix = `https://${parsed.hostname}:${httpsPort}/`;
+  const marker = window as Window & { __dfpunkHttpsProbeSkipped?: boolean };
+  if (marker.__dfpunkHttpsProbeSkipped) return;
+  const original = window.fetch.bind(window);
+  window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+    const href =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.href
+          : input.url;
+    if (href.startsWith(prefix)) {
+      return Promise.reject(
+        new TypeError("Headless Presto does not serve HTTPS")
+      );
+    }
+    return original(input, init);
+  };
+  marker.__dfpunkHttpsProbeSkipped = true;
+}
+
 export class WalletManager {
   private readonly node: AztecNode;
   private readonly wallet: Wallet;
@@ -521,6 +556,9 @@ export class WalletManager {
     onProgress?.(4, total, "Creating PXE");
     // OPFS SAH handles are exclusive per origin; fail fast if another tab holds them.
     await acquireWalletSessionLock();
+    if (config.proverUrl) {
+      skipHeadlessHttpsHealthProbe(config.proverUrl);
+    }
     const wallet = await EmbeddedWallet.create(node, {
       pxe: {
         dataDirectory: pxeDataDir,

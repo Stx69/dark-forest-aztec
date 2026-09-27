@@ -1,3 +1,5 @@
+import { BLOCK_EXPLORER_URL } from "@dfpunk/constants";
+
 import {
   DEFAULT_ACCOUNT_MIN_BALANCE_FJ,
   DEFAULT_SPONSORED_FPC_MIN_FJ,
@@ -120,6 +122,34 @@ export function getSponsoredFpcMinBalanceFjWei(): bigint {
     if (parsed !== undefined && parsed > 0n) return parsed;
   }
   return parseFjDecimalToWei(DEFAULT_SPONSORED_FPC_MIN_FJ)!;
+}
+
+const LOCAL_AZTEC_TX_URL = "http://127.0.0.1:8082/tx-effects";
+const LOCAL_ANVIL_TX_URL = "http://127.0.0.1:4000/tx";
+
+/**
+ * True when the client is talking to a node on this machine (local Aztec on Anvil).
+ */
+export function isLocalDevNode(): boolean {
+  try {
+    const host = new URL(getNodeUrl()).hostname;
+    return host === "localhost" || host === "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Explorer page for a transaction hash.
+ * Local Aztec game txs open the Aztec explorer. Local L1 txs open Anvil Blockscout.
+ * Remote nodes keep the public explorer.
+ */
+export function txExplorerUrl(hash: string, layer: "l2" | "l1" = "l2"): string {
+  if (isLocalDevNode()) {
+    const base = layer === "l1" ? LOCAL_ANVIL_TX_URL : LOCAL_AZTEC_TX_URL;
+    return `${base}/${hash}`;
+  }
+  return `${BLOCK_EXPLORER_URL}/${hash}`;
 }
 
 /**

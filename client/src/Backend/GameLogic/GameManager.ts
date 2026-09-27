@@ -1,7 +1,6 @@
 import { Fr } from "@aztec/aztec.js/fields";
 import { poseidon2Hash } from "@aztec/foundation/crypto/poseidon";
 import {
-  BLOCK_EXPLORER_URL,
   CONTRACT_PRECISION,
   EMPTY_ADDRESS,
   MIN_PLANET_LEVEL,
@@ -108,6 +107,7 @@ import {
   HashConfig,
   RevealCountdownInfo,
 } from "../../_types/global/GlobalTypes";
+import { txExplorerUrl } from "../../config/env";
 // import { CaptureZoneGenerator, CaptureZonesGeneratedEvent } from './CaptureZoneGenerator';
 import { ContractsAPI } from "../../ContractsAPI";
 import type { ContractConstants } from "../../ContractsAPI/ContractsAPITypes";
@@ -1248,9 +1248,7 @@ class GameManager extends EventEmitter {
     this.terminal.current?.printLink(
       `${tx.hash != null ? String(tx.hash).slice(0, 6) : ""}`,
       () => {
-        window.open(
-          `${BLOCK_EXPLORER_URL}/${tx.hash != null ? String(tx.hash) : ""}`
-        );
+        window.open(txExplorerUrl(tx.hash != null ? String(tx.hash) : ""));
       },
       TerminalTextStyle.White
     );
@@ -1269,9 +1267,7 @@ class GameManager extends EventEmitter {
     this.terminal.current?.printLink(
       `${tx.hash != null ? String(tx.hash).slice(0, 6) : ""}`,
       () => {
-        window.open(
-          `${BLOCK_EXPLORER_URL}/${tx.hash != null ? String(tx.hash) : ""}`
-        );
+        window.open(txExplorerUrl(tx.hash != null ? String(tx.hash) : ""));
       },
       TerminalTextStyle.White
     );
@@ -1286,9 +1282,7 @@ class GameManager extends EventEmitter {
     this.terminal.current?.printLink(
       `${tx.hash != null ? String(tx.hash).slice(0, 6) : ""}`,
       () => {
-        window.open(
-          `${BLOCK_EXPLORER_URL}/${tx.hash != null ? String(tx.hash) : ""}`
-        );
+        window.open(txExplorerUrl(tx.hash != null ? String(tx.hash) : ""));
       },
       TerminalTextStyle.White
     );
@@ -1305,9 +1299,7 @@ class GameManager extends EventEmitter {
     this.terminal.current?.printLink(
       `${tx.hash != null ? String(tx.hash).slice(0, 6) : ""}`,
       () => {
-        window.open(
-          `${BLOCK_EXPLORER_URL}/${tx.hash != null ? String(tx.hash) : ""}`
-        );
+        window.open(txExplorerUrl(tx.hash != null ? String(tx.hash) : ""));
       },
       TerminalTextStyle.White
     );

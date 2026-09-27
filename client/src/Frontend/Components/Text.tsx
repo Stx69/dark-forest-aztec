@@ -1,4 +1,3 @@
-import { BLOCK_EXPLORER_URL } from "@dfpunk/constants";
 import { isLocatable } from "@dfpunk/gamelogic";
 import { artifactName, getPlanetName } from "@dfpunk/procedural";
 import {
@@ -12,6 +11,7 @@ import {
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 
+import { txExplorerUrl } from "../../config/env";
 import { externalLinks } from "../../config/externalLinks";
 import Viewport from "../Game/Viewport";
 import dfstyles from "../Styles/dfstyles";
@@ -82,7 +82,7 @@ export function TxLink({ tx }: { tx: Transaction }) {
     return (
       <>
         <u>
-          <Link onClick={() => window.open(`${BLOCK_EXPLORER_URL}/${tx.hash}`)}>
+          <Link onClick={() => window.open(txExplorerUrl(String(tx.hash)))}>
             {tx.hash.toString().substring(0, 7)}
           </Link>
         </u>
