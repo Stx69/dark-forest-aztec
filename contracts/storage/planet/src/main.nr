@@ -25,8 +25,7 @@ pub contract PlanetStorage {
         authorized_count: PublicMutable<u32, Context>,
         // id (e.g. location_id) -> poseidon2 hash of Planet
         state_roots: Map<Field, PublicMutable<Field, Context>, Context>,
-        // Versioned split roots. The legacy root above remains authoritative
-        // for historical events while new writes dual-publish these roots.
+        // Kept so existing storage layout stays valid. Gameplay writes no longer update these.
         static_roots: Map<Field, PublicMutable<Field, Context>, Context>,
         dynamic_roots: Map<Field, PublicMutable<Field, Context>, Context>,
         stats_roots: Map<Field, PublicMutable<Field, Context>, Context>,
@@ -77,75 +76,10 @@ pub contract PlanetStorage {
 
     #[external("public")]
     fn set(id: Field, planet: Planet) {
-        // 15 marks every slice dirty. Existing callers keep the full write.
-        self.internal.write_planet(id, planet, 15);
-    }
-
-    /// Write the full planet log, and hash only the slices named by `mask`.
-    ///
-    /// Bits: 1 static, 2 dynamic, 4 stats, 8 modifiers. A clear bit reuses the
-    /// root already stored for that slice. The private circuit must set those
-    /// bits from a field comparison of the authenticated planet and the new one.
-    #[external("public")]
-    fn set_slices(id: Field, planet: Planet, mask: u8) {
-        self.internal.write_planet(id, planet, mask);
-    }
-
-    #[internal("public")]
-    fn write_planet(id: Field, planet: Planet, mask: u8) {
         self.internal.assert_authorized();
-        assert((mask & 15) == mask, "invalid planet slice mask");
         let block_number = self.context.block_number();
         let (root, log) = PlanetUpdate::encode_update(id, block_number, planet);
         self.storage.state_roots.at(id).write(root);
-        let clear_all = planet == Planet::zero();
-        let write_static = clear_all | ((mask & 1) == 1);
-        let write_dynamic = clear_all | ((mask & 2) == 2);
-        let write_stats = clear_all | ((mask & 4) == 4);
-        let write_modifiers = clear_all | ((mask & 8) == 8);
-        let split_roots = if clear_all {
-            PlanetSplitRoots::zero()
-        } else {
-            let static_root = if write_static {
-                poseidon2_hash(planet.split_static().serialize())
-            } else {
-                self.storage.static_roots.at(id).read()
-            };
-            let dynamic_root = if write_dynamic {
-                poseidon2_hash(planet.split_dynamic().serialize())
-            } else {
-                self.storage.dynamic_roots.at(id).read()
-            };
-            let stats_root = if write_stats {
-                poseidon2_hash(planet.split_stats().serialize())
-            } else {
-                self.storage.stats_roots.at(id).read()
-            };
-            let modifier_root = if write_modifiers {
-                poseidon2_hash(planet.split_modifiers().serialize())
-            } else {
-                self.storage.modifier_roots.at(id).read()
-            };
-            let composed_root =
-                poseidon2_hash([static_root, dynamic_root, stats_root, modifier_root]);
-            PlanetSplitRoots { static_root, dynamic_root, stats_root, modifier_root, composed_root }
-        };
-        if write_static {
-            self.storage.static_roots.at(id).write(split_roots.static_root);
-        }
-        if write_dynamic {
-            self.storage.dynamic_roots.at(id).write(split_roots.dynamic_root);
-        }
-        if write_stats {
-            self.storage.stats_roots.at(id).write(split_roots.stats_root);
-        }
-        if write_modifiers {
-            self.storage.modifier_roots.at(id).write(split_roots.modifier_root);
-        }
-        if clear_all | (mask != 0) {
-            self.storage.composed_roots.at(id).write(split_roots.composed_root);
-            self.emit(PlanetSplitRootsUpdate { id, block_number, state: split_roots });
-        }
         unsafe {
             aztec::oracle::avm::emit_public_log(log.as_vector());
         }

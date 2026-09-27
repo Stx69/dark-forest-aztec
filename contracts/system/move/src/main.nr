@@ -46,7 +46,7 @@ contract Move {
     use ::libs::batch_utils::{
         assert_artifact_timestamp_freshness, assert_planet_timestamp_freshness,
         assert_public_timestamp, compute_artifact_and_location_hashes, compute_artifact_hash,
-        compute_config_hashes, compute_planet_hashes, compute_world_hash, planet_slice_mask,
+        compute_config_hashes, compute_planet_hashes, compute_world_hash,
     };
     use ::libs::planet::{
         apply_spaceship_depart, check_player_init, initialize_planet_with_defaults,
@@ -792,9 +792,6 @@ contract Move {
         new_source_activated_artifact.last_updated = timestamp;
         new_source_activated_artifact_location.last_updated = timestamp;
 
-        let source_slice_mask = planet_slice_mask(source_planet, new_source_planet);
-        let target_slice_mask = planet_slice_mask(target_planet, new_target_planet);
-
         // Pass hashes and computed results to public for verification and storage
         self.enqueue_self.move_public(
             source_loc,
@@ -843,8 +840,6 @@ contract Move {
             new_moved_artifact_location,
             new_source_activated_artifact,
             new_source_activated_artifact_location,
-            source_slice_mask,
-            target_slice_mask,
         );
     }
 
@@ -899,8 +894,6 @@ contract Move {
         new_moved_artifact_location_input: ArtifactLocation,
         new_source_activated_artifact: Artifact,
         new_source_activated_artifact_location: ArtifactLocation,
-        source_slice_mask: u8,
-        target_slice_mask: u8,
     ) {
         let mut new_target_planet_events_state = new_target_planet_events_state_input;
         let mut new_arrival = new_arrival_input;
@@ -1069,8 +1062,8 @@ contract Move {
             new_moved_artifact_location.voyage_id = event_id;
         }
 
-        // Write new states to storage. Hash only the planet slices that changed.
-        self.call(planet_storage.set_slices(source_loc, new_source_planet, source_slice_mask));
+        // Write new states to storage.
+        self.call(planet_storage.set(source_loc, new_source_planet));
         self.call(planet_artifacts_storage.set(source_loc, new_source_planet_artifacts_state));
         self.call(planet_events_storage.set(source_loc, new_source_planet_events_state));
 
@@ -1083,7 +1076,7 @@ contract Move {
             ));
         }
 
-        self.call(planet_storage.set_slices(target_loc, new_target_planet, target_slice_mask));
+        self.call(planet_storage.set(target_loc, new_target_planet));
         self.call(planet_artifacts_storage.set(target_loc, new_target_planet_artifacts_state));
         self.call(planet_events_storage.set(target_loc, new_target_planet_events_state));
 
