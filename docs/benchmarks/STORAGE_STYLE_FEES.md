@@ -19,6 +19,8 @@ Billed L2 gas. `devkit` is the 28 Sep 2026 run: unchanged side rows are skipped,
 
 `move` public L2 is 710,142. The other four functions match the previous DevKit run. Teardown gas was 0 for every row.
 
+Aztec 5.2.0 on the same five calls is the `aztec520` section, measured 28 Sep 2026. Billed L2 matches the latest 5.0.1 DevKit column: initialize_player 831,158, give_spaceships 1,531,122, move 1,300,942, upgrade_planet 1,123,533, withdraw_silver 1,177,559.
+
 ## What is recorded
 
 Each included transaction prints one `FEE_MEASURE` line from `contracts/scripts/test/feeMeasureLog.ts`:

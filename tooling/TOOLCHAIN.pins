@@ -1,0 +1,10 @@
+# Pinned toolchain. Hex is the sha512 of the npm integrity payload.
+# pnpm npm dist.integrity: https://registry.npmjs.org/pnpm/11.28.0
+
+NODE_VERSION=24.19.0
+PNPM_VERSION=11.28.0
+PNPM_NPM_INTEGRITY=sha512-jtI5Nx3oIkS2zM+eICPBjqhDmWHy7D/omJE7n37i52ygpFcXWArKPHmXwTX21PXeRSTL7uGizKxDDAPRNOKkjA==
+PNPM_PACKAGE_MANAGER=pnpm@11.28.0+sha512.8ed239371de82244b6cccf9e2023c18ea8439961f2ec3fe898913b9f7ee2e76ca0a45717580aca3c7997c135f6d4f5de4524cbeee1a2ccac430c03d134e2a48c
+
+TYPESCRIPT_VERSION=5.9.3
+TYPESCRIPT_NPM_INTEGRITY=sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==

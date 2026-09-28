@@ -11,7 +11,11 @@
 import type { UnconfirmedDeactivateArtifact } from "@dfpunk/types";
 
 import type { ResolverDeps } from "./resolverHelpers";
-import { collectEntityTimes, computeTimestamp } from "./resolverHelpers";
+import {
+  chainActionTimestamp,
+  collectEntityTimes,
+  computeTimestamp,
+} from "./resolverHelpers";
 import { loadArrivalsForPlanetEvents } from "./resolverShared";
 import {
   artifactLocationToContract,
@@ -77,7 +81,7 @@ export async function resolveDeactivateArtifact(
 
   const artifactId = BigInt(`0x${intent.artifactId}`);
   const timestamp = computeTimestamp(
-    BigInt(Math.floor(intent.uiTimestamp ?? deps.chainClock.nowSec())),
+    chainActionTimestamp(deps.chainClock),
     collectEntityTimes(planetRaw, planetEventsRaw, planetArtifactsRaw)
   );
 

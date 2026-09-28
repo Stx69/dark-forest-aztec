@@ -20,6 +20,7 @@ import {
 
 import type { ResolverDeps } from "./resolverHelpers";
 import {
+  chainActionTimestamp,
   collectEntityTimes,
   computeTimestamp,
   hexIdToField,
@@ -183,7 +184,7 @@ export async function resolveFindArtifact(
   const world = worldRaw ? worldToContract(worldRaw) : worldInitial();
 
   const timestamp = computeTimestamp(
-    BigInt(Math.floor(intent.uiTimestamp ?? deps.chainClock.nowSec())),
+    chainActionTimestamp(deps.chainClock),
     collectEntityTimes(
       planetRaw,
       planetEventsRaw,

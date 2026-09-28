@@ -73,7 +73,7 @@ import { resolveDepositArtifact } from "./resolveDepositArtifact";
 import { resolveFindArtifact } from "./resolveFindArtifact";
 import { resolveGiveSpaceships } from "./resolveGiveSpaceships";
 import { resolveProspectPlanet } from "./resolveProspectPlanet";
-import type { ResolverDeps } from "./resolverHelpers";
+import { chainActionTimestamp, type ResolverDeps } from "./resolverHelpers";
 import { resolveWithdrawArtifact } from "./resolveWithdrawArtifact";
 import {
   arrivalToContract,
@@ -108,6 +108,7 @@ import {
   playerZero,
   worldInitial,
 } from "./stateZeros";
+import { staticTxScopes } from "./txScopes";
 
 // BN254 scalar field modulus (Fr order).
 // Negative coordinates are mapped to field elements: -n → p - n.
@@ -283,6 +284,9 @@ export class StateResolver {
     if (this.lastConfirmedBlock > 0) {
       await this.indexer.waitForBlock(this.lastConfirmedBlock);
     }
+    // Click-time uiTimestamp goes stale while the previous tx proves.
+    // Sync here so the args use the head block, inside the 300s public window.
+    await this.chainClock.syncFromNode();
     switch (intent.methodName) {
       case "initializePlayer":
         return this.resolveInitializePlayer(intent as UnconfirmedInit);
@@ -448,9 +452,7 @@ export class StateResolver {
     const worldRaw = this.indexer.getWorld();
     const world = worldRaw ? worldToContract(worldRaw) : worldInitial();
 
-    let timestamp = BigInt(
-      Math.floor(intent.uiTimestamp ?? this.chainClock.nowSec())
-    );
+    let timestamp = BigInt(chainActionTimestamp(this.chainClock));
     if (planetRaw) {
       const planetLastUpdated = BigInt(planetRaw.last_updated);
       if (planetLastUpdated > timestamp) {
@@ -594,9 +596,7 @@ export class StateResolver {
       perlin = planetRaw ? planetRaw.perlin : 0;
     }
 
-    let timestamp = BigInt(
-      Math.floor(intent.uiTimestamp ?? this.chainClock.nowSec())
-    );
+    let timestamp = BigInt(chainActionTimestamp(this.chainClock));
     if (planetRaw) {
       const planetLastUpdated = BigInt(planetRaw.last_updated);
       if (planetLastUpdated > timestamp) {
@@ -897,9 +897,7 @@ export class StateResolver {
     const levelIndex = Math.min(9, Math.max(0, targetLevelResolved));
     const planetDefaultStats = config.planetDefaultStats[levelIndex];
 
-    let timestamp = BigInt(
-      Math.floor(intent.uiTimestamp ?? this.chainClock.nowSec())
-    );
+    let timestamp = BigInt(chainActionTimestamp(this.chainClock));
     {
       const entityTimes: bigint[] = [];
       if (sourcePlanetRaw) entityTimes.push(sourcePlanetRaw.last_updated);
@@ -1079,9 +1077,7 @@ export class StateResolver {
       );
     }
 
-    let timestamp = BigInt(
-      Math.floor(intent.uiTimestamp ?? this.chainClock.nowSec())
-    );
+    let timestamp = BigInt(chainActionTimestamp(this.chainClock));
     {
       const entityTimes: bigint[] = [];
       if (planetRaw) entityTimes.push(planetRaw.last_updated);
@@ -1154,9 +1150,7 @@ export class StateResolver {
     const worldRaw = this.indexer.getWorld();
     const world = worldRaw ? worldToContract(worldRaw) : worldInitial();
 
-    let timestamp = BigInt(
-      Math.floor(intent.uiTimestamp ?? this.chainClock.nowSec())
-    );
+    let timestamp = BigInt(chainActionTimestamp(this.chainClock));
     {
       const entityTimes: bigint[] = [];
       if (planetRaw) entityTimes.push(planetRaw.last_updated);
@@ -1314,9 +1308,7 @@ export class StateResolver {
     const worldRaw = this.indexer.getWorld();
     const world = worldRaw ? worldToContract(worldRaw) : worldInitial();
 
-    let timestamp = BigInt(
-      Math.floor(intent.uiTimestamp ?? this.chainClock.nowSec())
-    );
+    let timestamp = BigInt(chainActionTimestamp(this.chainClock));
     if (planetRaw) {
       const planetLastUpdated = BigInt(planetRaw.last_updated);
       if (planetLastUpdated > timestamp) {
@@ -1511,19 +1503,25 @@ export class StateResolver {
 
     // Source entity hashes
     await check("source planet", computePlanetHash(sourcePlanet), () =>
-      ps.methods.get_state_root_unconstrained(sourceLoc).simulate({ from })
+      ps.methods
+        .get_state_root_unconstrained(sourceLoc)
+        .simulate({ from, additionalScopes: staticTxScopes() })
     );
     await check(
       "source planet_events",
       computePlanetEventsHash(sourcePlanetEvents),
       () =>
-        pes.methods.get_state_root_unconstrained(sourceLoc).simulate({ from })
+        pes.methods
+          .get_state_root_unconstrained(sourceLoc)
+          .simulate({ from, additionalScopes: staticTxScopes() })
     );
     await check(
       "source planet_artifacts",
       computePlanetArtifactsHash(sourcePlanetArtifacts),
       () =>
-        pas.methods.get_state_root_unconstrained(sourceLoc).simulate({ from })
+        pas.methods
+          .get_state_root_unconstrained(sourceLoc)
+          .simulate({ from, additionalScopes: staticTxScopes() })
     );
 
     // Source arrivals batch
@@ -1532,7 +1530,9 @@ export class StateResolver {
       const arrId = BigInt(Number(arrival["id"] ?? 0));
       if (arrId === 0n) continue;
       await check(`source arrival[${i}]`, computeArrivalHash(arrival), () =>
-        arrs.methods.get_state_root_unconstrained(arrId).simulate({ from })
+        arrs.methods
+          .get_state_root_unconstrained(arrId)
+          .simulate({ from, additionalScopes: staticTxScopes() })
       );
       const art = sourceArrivalData.artifacts[i];
       const artCarried = BigInt(String(arrival["carried_artifact_id"] ?? 0));
@@ -1540,7 +1540,7 @@ export class StateResolver {
         await check(`source artifact[${i}]`, computeArtifactHash(art), () =>
           arts.methods
             .get_state_root_unconstrained(artCarried)
-            .simulate({ from })
+            .simulate({ from, additionalScopes: staticTxScopes() })
         );
         await check(
           `source artifact_location[${i}]`,
@@ -1548,26 +1548,32 @@ export class StateResolver {
           () =>
             als.methods
               .get_state_root_unconstrained(artCarried)
-              .simulate({ from })
+              .simulate({ from, additionalScopes: staticTxScopes() })
         );
       }
     }
 
     // Target entity hashes
     await check("target planet", computePlanetHash(targetPlanet), () =>
-      ps.methods.get_state_root_unconstrained(targetLoc).simulate({ from })
+      ps.methods
+        .get_state_root_unconstrained(targetLoc)
+        .simulate({ from, additionalScopes: staticTxScopes() })
     );
     await check(
       "target planet_events",
       computePlanetEventsHash(targetPlanetEvents),
       () =>
-        pes.methods.get_state_root_unconstrained(targetLoc).simulate({ from })
+        pes.methods
+          .get_state_root_unconstrained(targetLoc)
+          .simulate({ from, additionalScopes: staticTxScopes() })
     );
     await check(
       "target planet_artifacts",
       computePlanetArtifactsHash(targetPlanetArtifacts),
       () =>
-        pas.methods.get_state_root_unconstrained(targetLoc).simulate({ from })
+        pas.methods
+          .get_state_root_unconstrained(targetLoc)
+          .simulate({ from, additionalScopes: staticTxScopes() })
     );
 
     // Target arrivals batch
@@ -1576,7 +1582,9 @@ export class StateResolver {
       const arrId = BigInt(Number(arrival["id"] ?? 0));
       if (arrId === 0n) continue;
       await check(`target arrival[${i}]`, computeArrivalHash(arrival), () =>
-        arrs.methods.get_state_root_unconstrained(arrId).simulate({ from })
+        arrs.methods
+          .get_state_root_unconstrained(arrId)
+          .simulate({ from, additionalScopes: staticTxScopes() })
       );
       const art = targetArrivalData.artifacts[i];
       const artCarried = BigInt(String(arrival["carried_artifact_id"] ?? 0));
@@ -1584,7 +1592,7 @@ export class StateResolver {
         await check(`target artifact[${i}]`, computeArtifactHash(art), () =>
           arts.methods
             .get_state_root_unconstrained(artCarried)
-            .simulate({ from })
+            .simulate({ from, additionalScopes: staticTxScopes() })
         );
         await check(
           `target artifact_location[${i}]`,
@@ -1592,14 +1600,16 @@ export class StateResolver {
           () =>
             als.methods
               .get_state_root_unconstrained(artCarried)
-              .simulate({ from })
+              .simulate({ from, additionalScopes: staticTxScopes() })
         );
       }
     }
 
     // World hash
     await check("world", computeWorldHash(world), () =>
-      ws.methods.get_state_root_unconstrained(0).simulate({ from })
+      ws.methods
+        .get_state_root_unconstrained(0)
+        .simulate({ from, additionalScopes: staticTxScopes() })
     );
 
     // Moved artifact
@@ -1607,7 +1617,7 @@ export class StateResolver {
       await check("moved artifact", computeArtifactHash(movedArtifact), () =>
         arts.methods
           .get_state_root_unconstrained(movedArtifactId)
-          .simulate({ from })
+          .simulate({ from, additionalScopes: staticTxScopes() })
       );
     }
 
@@ -1619,7 +1629,7 @@ export class StateResolver {
         () =>
           arts.methods
             .get_state_root_unconstrained(sourceActivatedArtifactId)
-            .simulate({ from })
+            .simulate({ from, additionalScopes: staticTxScopes() })
       );
     }
 
@@ -1631,7 +1641,7 @@ export class StateResolver {
         () =>
           arts.methods
             .get_state_root_unconstrained(targetActivatedArtifactId)
-            .simulate({ from })
+            .simulate({ from, additionalScopes: staticTxScopes() })
       );
     }
 
@@ -1675,7 +1685,7 @@ export class StateResolver {
     await check("planet", computePlanetHash(planetState), () =>
       this.planetStorage.methods
         .get_state_root_unconstrained(locationId)
-        .simulate({ from })
+        .simulate({ from, additionalScopes: staticTxScopes() })
     );
     await check(
       "planetRevealedCoords",
@@ -1683,17 +1693,17 @@ export class StateResolver {
       () =>
         this.planetRevealedCoordsStorage.methods
           .get_state_root_unconstrained(locationId)
-          .simulate({ from })
+          .simulate({ from, additionalScopes: staticTxScopes() })
     );
     await check("player", computePlayerHash(playerState), () =>
       this.playerStorage.methods
         .get_state_root_unconstrained(from)
-        .simulate({ from })
+        .simulate({ from, additionalScopes: staticTxScopes() })
     );
     await check("world", computeWorldHash(world), () =>
       this.worldStorage.methods
         .get_state_root_unconstrained(0)
-        .simulate({ from })
+        .simulate({ from, additionalScopes: staticTxScopes() })
     );
 
     if (mismatches.length > 0) {
@@ -1735,17 +1745,17 @@ export class StateResolver {
     await check("planet", computePlanetHash(planetState), () =>
       this.planetStorage.methods
         .get_state_root_unconstrained(locationId)
-        .simulate({ from })
+        .simulate({ from, additionalScopes: staticTxScopes() })
     );
     await check("player", computePlayerHash(playerState), () =>
       this.playerStorage.methods
         .get_state_root_unconstrained(from)
-        .simulate({ from })
+        .simulate({ from, additionalScopes: staticTxScopes() })
     );
     await check("world", computeWorldHash(world), () =>
       this.worldStorage.methods
         .get_state_root_unconstrained(0)
-        .simulate({ from })
+        .simulate({ from, additionalScopes: staticTxScopes() })
     );
 
     if (mismatches.length > 0) {

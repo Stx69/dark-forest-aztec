@@ -7,6 +7,8 @@ import type { AztecAddress } from "@aztec/aztec.js/addresses";
 import type { ContractBase } from "@aztec/aztec.js/contracts";
 import { unwrapSimulateResult } from "@dfpunk/utils";
 
+import { staticTxScopes } from "./txScopes";
+
 /** Raw Upgrade from contract (snake_case). */
 export type RawUpgrade = {
   pop_cap_multiplier?: number | bigint;
@@ -372,7 +374,10 @@ export class ConfigCache {
     };
 
     const fullRaw = await simulateStep("full config", () =>
-      c.methods.get_full_config_unconstrained().simulate({ from })
+      c.methods.get_full_config_unconstrained().simulate({
+        from,
+        additionalScopes: staticTxScopes(),
+      })
     );
 
     const full = normalizeFullConfig(fullRaw);

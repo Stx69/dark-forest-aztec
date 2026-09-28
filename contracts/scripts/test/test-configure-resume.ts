@@ -281,7 +281,7 @@ console.log('\n=== planet stats / cumulative ===');
     );
     stats[0] = {
         ...stats[0]!,
-        population_cap: 1n,
+        population_cap: 400000n,
     };
     assertEq(
         classifyPlanetStatsRange({ default_stats: stats }, 0, 4),

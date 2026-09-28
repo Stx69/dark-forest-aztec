@@ -11,7 +11,11 @@
 import type { UnconfirmedGetShips } from "@dfpunk/types";
 
 import type { ResolverDeps } from "./resolverHelpers";
-import { collectEntityTimes, computeTimestamp } from "./resolverHelpers";
+import {
+  chainActionTimestamp,
+  collectEntityTimes,
+  computeTimestamp,
+} from "./resolverHelpers";
 import { loadArrivalsForPlanetEvents } from "./resolverShared";
 import {
   planetArtifactsToContract,
@@ -64,7 +68,7 @@ export async function resolveGiveSpaceships(
   const player = playerRaw ? playerToContract(playerRaw) : playerZero();
 
   const timestamp = computeTimestamp(
-    BigInt(Math.floor(intent.uiTimestamp ?? deps.chainClock.nowSec())),
+    chainActionTimestamp(deps.chainClock),
     collectEntityTimes(
       planetRaw,
       planetEventsRaw,

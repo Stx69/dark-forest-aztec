@@ -1,11 +1,43 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
+import path from "node:path";
 
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 const require = createRequire(import.meta.url);
+
+// pnpm does not hoist this transitive package to node_modules/@aztec, so Vite
+// cannot resolve the bare import left in prebundled @aztec/stdlib.
+// stdlib exports omit "./package.json", so locate the package from an exported file.
+const stdlibDir = realpathSync(
+  path.join(path.dirname(require.resolve("@aztec/stdlib/tx")), "../..")
+);
+const noirAbiDir = path.join(stdlibDir, "../noir-noirc_abi");
+// @aztec/simulator depends on this, but it is not hoisted where Vite can see it.
+const aztecJsRequire = createRequire(require.resolve("@aztec/aztec.js/fields"));
+const simulatorClient = aztecJsRequire.resolve("@aztec/simulator/client");
+const noirAcvmDir = realpathSync(
+  path.join(path.dirname(simulatorClient), "../../noir-acvm_js")
+);
+
+// pnpm keeps a second @aztec/stdlib (different peer graph). AztecAddress.equals
+// then fails even when the hex is already in the allowed scopes list.
+function forceSinglePackage(packageName: string, packageDir: string): Plugin {
+  const prefix = `${packageName}/`;
+  return {
+    name: `force-single-${packageName}`,
+    enforce: "pre",
+    async resolveId(id, _importer, options) {
+      if (id !== packageName && !id.startsWith(prefix)) return null;
+      return this.resolve(id, path.join(packageDir, "package.json"), {
+        ...options,
+        skipSelf: true,
+      });
+    },
+  };
+}
 
 /**
  * sqlite3mc's loader resolves `sqlite3.wasm` and `sqlite3-opfs-async-proxy.js`
@@ -50,6 +82,7 @@ export default defineConfig({
     format: "es",
   },
   plugins: [
+    forceSinglePackage("@aztec/stdlib", stdlibDir),
     emitSqliteRuntimeAssets(),
     react(),
     nodePolyfills({
@@ -77,6 +110,15 @@ export default defineConfig({
       "Cross-Origin-Opener-Policy": "same-origin",
       "Cross-Origin-Embedder-Policy": "credentialless",
     },
+  },
+  resolve: {
+    alias: {
+      "@aztec/noir-noirc_abi": noirAbiDir,
+      "@aztec/noir-acvm_js": noirAcvmDir,
+    },
+    // pnpm installs two @aztec/foundation copies (different peer graphs).
+    // BaseField rejects a field from the other copy, which breaks getPublicEvents.
+    dedupe: ["@aztec/foundation", "@aztec/stdlib", "@aztec/aztec.js"],
   },
   build: {
     target: "esnext",

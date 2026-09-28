@@ -12,6 +12,7 @@ import type { UnconfirmedProspectPlanet } from "@dfpunk/types";
 
 import type { ResolverDeps } from "./resolverHelpers";
 import {
+  chainActionTimestamp,
   collectEntityTimes,
   computeTimestamp,
   loadArtifactsForPlanet,
@@ -70,7 +71,7 @@ export async function resolveProspectPlanet(
   const world = worldRaw ? worldToContract(worldRaw) : worldInitial();
 
   const timestamp = computeTimestamp(
-    BigInt(Math.floor(intent.uiTimestamp ?? deps.chainClock.nowSec())),
+    chainActionTimestamp(deps.chainClock),
     collectEntityTimes(planetRaw, planetEventsRaw, planetArtifactsRaw)
   );
 

@@ -44,6 +44,7 @@ import { ConfigCache } from "./ConfigCache";
 import { ContractResolver } from "./ContractResolver";
 import { StateResolver, type StateResolverOptions } from "./StateResolver";
 import { ThrottledConcurrentQueue } from "./ThrottledConcurrentQueue";
+import { collectTxScopes } from "./txScopes";
 import type {
   AfterTransaction,
   BeforeQueued,
@@ -353,9 +354,15 @@ export class TxExecutor {
             }
           }
         }
+        // Same scope list for every method (move, reveal, artifacts, admin, init).
+        const additionalScopes = await collectTxScopes(
+          this.walletManager.getWallet(),
+          sponsoredFpcAddress
+        );
         const sendOptsNoWait = useSponsoredFpc
           ? ({
               from: this.walletManager.getActiveAddress()!,
+              additionalScopes,
               fee: {
                 paymentMethod: new SponsoredFeePaymentMethod(
                   sponsoredFpcAddress!
@@ -365,10 +372,12 @@ export class TxExecutor {
             } satisfies SendInteractionOptions<NoWait>)
           : ({
               from: this.walletManager.getActiveAddress()!,
+              additionalScopes,
               wait: NO_WAIT,
             } satisfies SendInteractionOptions<NoWait>);
         const simulateOpts = {
           from: sendOptsNoWait.from,
+          additionalScopes,
           fee: sendOptsNoWait.fee,
         };
 

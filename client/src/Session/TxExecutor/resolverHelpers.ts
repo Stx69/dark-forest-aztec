@@ -27,6 +27,18 @@ export function hexIdToField(v: unknown): bigint {
 }
 
 /**
+ * Timestamp for a contract call: the latest synced L2 block.
+ * Click-time `uiTimestamp` is not used. A queued move waits out the previous
+ * proof, and that saved timestamp is then more than the contract's 300s
+ * public-time window behind the block (`Timestamp too old`).
+ */
+export function chainActionTimestamp(chainClock: ChainClock): bigint {
+  const blockTs = chainClock.lastBlockTimestamp();
+  if (blockTs > 0) return BigInt(blockTs);
+  return BigInt(Math.floor(Date.now() / 1000));
+}
+
+/**
  * Compute a safe timestamp: max of baseTimestamp and all entity last_updated times.
  * Uses the raw chain block timestamp (not extrapolated) to avoid sending a
  * timestamp ahead of the L2 block time on devnet.

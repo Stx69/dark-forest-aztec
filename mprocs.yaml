@@ -29,6 +29,9 @@ procs:
   contracts:
     cwd: <CONFIG_DIR>
     shell: bash scripts/dev/mprocs-contracts.sh
+    env:
+      # nargo/aztec compile uses Rayon; cap it so the rest of the stack keeps CPU.
+      RAYON_NUM_THREADS: "16"
 
   ticker:
     cwd: <CONFIG_DIR>

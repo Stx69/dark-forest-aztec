@@ -659,14 +659,27 @@ export class WalletManager {
     }
 
     onStatus?.("Registering Schnorr account...");
-    await wallet.createSchnorrInitializerlessAccount(
+    const accountManager = await wallet.createSchnorrInitializerlessAccount(
       Fr.fromString(record.secretKey),
       Fr.fromString(record.salt),
       fqFromHex(record.signingKey)
     );
 
-    // Use the selected account address from options/list as active target.
-    this.setActive(AztecAddress.fromStringUnsafe(address), address);
+    // Aztec 5.2 folds immutables_hash into the account address. The same
+    // secret, salt, and signing key no longer hash to a 5.0.1 address.
+    // The wallet executes as the derived address (msg_sender). The HUD and
+    // state lookups must use that address, or later calls fail owner and
+    // player-hash checks against the planet initialize_player just wrote.
+    const derived = accountManager.address.toString();
+    if (derived !== address) {
+      console.warn(
+        `[WalletManager] Account address changed for these keys. Stored ${address} now derives ${derived}. Planets owned by the previous address stay on that address.`
+      );
+      this.keyStore.removeAccount(address);
+      this.keyStore.saveAccount({ ...record, address: derived });
+    }
+
+    this.setActive(accountManager.address, derived);
   }
 
   async switchAccount(

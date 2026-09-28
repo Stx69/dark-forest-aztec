@@ -14,8 +14,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const section = process.argv[2];
-if (section !== 'devkit' && section !== 'devkitMain') {
-    console.error('Usage: measure-storage-fees.ts <devkit|devkitMain>');
+if (
+    section !== 'devkit' &&
+    section !== 'devkitMain' &&
+    section !== 'aztec520'
+) {
+    console.error(
+        'Usage: measure-storage-fees.ts <devkit|devkitMain|aztec520>'
+    );
     process.exit(1);
 }
 
