@@ -770,10 +770,21 @@ contract Move {
         new_source_planet.silver -= silver_moved;
         new_source_planet.population = remaining_origin_planet_population;
 
-        // Set last_updated on all new state tables before passing to public
+        // Stamp last_updated only on rows whose other fields changed. An unchanged
+        // row keeps its stored hash, and freshness still accepts the older stamp.
+        let source_events_dirty = new_source_planet_events_state != source_planet_events_state;
+        let source_artifacts_dirty =
+            new_source_planet_artifacts_state != source_planet_artifacts_state;
+        let target_artifacts_dirty =
+            new_target_planet_artifacts_state != target_planet_artifacts_state;
+
         new_source_planet.last_updated = timestamp;
-        new_source_planet_events_state.last_updated = timestamp;
-        new_source_planet_artifacts_state.last_updated = timestamp;
+        if source_events_dirty {
+            new_source_planet_events_state.last_updated = timestamp;
+        }
+        if source_artifacts_dirty {
+            new_source_planet_artifacts_state.last_updated = timestamp;
+        }
         for i in 0..20 {
             if i < original_source_arrivals_count & (source_arrivals[i].carried_artifact_id != 0) {
                 new_source_arrival_artifact_locations[i].last_updated = timestamp;
@@ -782,7 +793,9 @@ contract Move {
 
         new_target_planet.last_updated = timestamp;
         new_target_planet_events_state.last_updated = timestamp;
-        new_target_planet_artifacts_state.last_updated = timestamp;
+        if target_artifacts_dirty {
+            new_target_planet_artifacts_state.last_updated = timestamp;
+        }
         for i in 0..20 {
             if i < original_target_arrivals_count & (target_arrivals[i].carried_artifact_id != 0) {
                 new_target_arrival_artifact_locations[i].last_updated = timestamp;
@@ -809,38 +822,53 @@ contract Move {
             source_planet_hash,
             source_planet_artifacts_state_hash,
             source_planet_events_state_hash,
-            source_arrival_ids,
-            source_arrival_hashes,
-            source_arrival_artifact_ids,
-            source_arrival_artifact_hashes,
-            source_arrival_artifact_location_hashes,
-            original_source_arrivals_count,
             target_planet_hash,
             target_planet_artifacts_state_hash,
             target_planet_events_state_hash,
-            target_arrival_ids,
-            target_arrival_hashes,
-            target_arrival_artifact_ids,
-            target_arrival_artifact_hashes,
-            target_arrival_artifact_location_hashes,
-            original_target_arrivals_count,
             world_hash,
             moved_artifact_hash,
             source_activated_artifact_hash,
             target_activated_artifact_hash,
             new_source_planet,
-            new_source_planet_artifacts_state,
-            new_source_planet_events_state,
-            new_source_arrival_artifact_locations,
             new_target_planet,
-            new_target_planet_artifacts_state,
             new_target_planet_events_state,
-            new_target_arrival_artifact_locations,
             new_arrival,
             new_moved_artifact_location,
             new_source_activated_artifact,
             new_source_activated_artifact_location,
         );
+
+        if source_events_dirty {
+            self.enqueue_self.write_planet_events(source_loc, new_source_planet_events_state);
+        }
+        if source_artifacts_dirty {
+            self.enqueue_self.write_planet_artifacts(source_loc, new_source_planet_artifacts_state);
+        }
+        if target_artifacts_dirty {
+            self.enqueue_self.write_planet_artifacts(target_loc, new_target_planet_artifacts_state);
+        }
+        if original_source_arrivals_count > 0 {
+            self.enqueue_self.verify_and_write_arrival_locations(
+                original_source_arrivals_count,
+                source_arrival_ids,
+                source_arrival_hashes,
+                source_arrival_artifact_ids,
+                source_arrival_artifact_hashes,
+                source_arrival_artifact_location_hashes,
+                new_source_arrival_artifact_locations,
+            );
+        }
+        if original_target_arrivals_count > 0 {
+            self.enqueue_self.verify_and_write_arrival_locations(
+                original_target_arrivals_count,
+                target_arrival_ids,
+                target_arrival_hashes,
+                target_arrival_artifact_ids,
+                target_arrival_artifact_hashes,
+                target_arrival_artifact_location_hashes,
+                new_target_arrival_artifact_locations,
+            );
+        }
     }
 
     #[external("public")]
@@ -862,34 +890,17 @@ contract Move {
         source_planet_hash: Field,
         source_planet_artifacts_state_hash: Field,
         source_planet_events_state_hash: Field,
-        source_arrival_ids: [Field; 20],
-        source_arrival_hashes: [Field; 20],
-        source_arrival_artifact_ids: [Field; 20],
-        source_arrival_artifact_hashes: [Field; 20],
-        source_arrival_artifact_location_hashes: [Field; 20],
-        original_source_arrivals_count: u32,
         target_planet_hash: Field,
         target_planet_artifacts_state_hash: Field,
         target_planet_events_state_hash: Field,
-        target_arrival_ids: [Field; 20],
-        target_arrival_hashes: [Field; 20],
-        target_arrival_artifact_ids: [Field; 20],
-        target_arrival_artifact_hashes: [Field; 20],
-        target_arrival_artifact_location_hashes: [Field; 20],
-        original_target_arrivals_count: u32,
         world_hash: Field,
         moved_artifact_hash: Field,
         source_activated_artifact_hash: Field,
         target_activated_artifact_hash: Field,
         // New states to write (computed in private function)
         new_source_planet: Planet,
-        new_source_planet_artifacts_state: PlanetArtifacts,
-        new_source_planet_events_state: PlanetEvents,
-        new_source_arrival_artifact_locations: [ArtifactLocation; 20],
         new_target_planet: Planet,
-        new_target_planet_artifacts_state: PlanetArtifacts,
         new_target_planet_events_state_input: PlanetEvents,
-        new_target_arrival_artifact_locations: [ArtifactLocation; 20],
         new_arrival_input: Arrival,
         new_moved_artifact_location_input: ArtifactLocation,
         new_source_activated_artifact: Artifact,
@@ -948,33 +959,6 @@ contract Move {
             "Source planet events hash mismatch",
         );
 
-        if original_source_arrivals_count > 0 {
-            assert(
-                self.view(arrivals_storage.verify_hashes_batch(
-                    source_arrival_ids,
-                    source_arrival_hashes,
-                    original_source_arrivals_count,
-                )),
-                "Source arrival hash mismatch",
-            );
-            assert(
-                self.view(artifact_storage.verify_hashes_batch(
-                    source_arrival_artifact_ids,
-                    source_arrival_artifact_hashes,
-                    original_source_arrivals_count,
-                )),
-                "Source artifact hash mismatch",
-            );
-            assert(
-                self.view(artifact_location_storage.verify_hashes_batch(
-                    source_arrival_artifact_ids,
-                    source_arrival_artifact_location_hashes,
-                    original_source_arrivals_count,
-                )),
-                "Source artifact location hash mismatch",
-            );
-        }
-
         // Verify target planet state hashes
         assert(
             self.view(planet_storage.verify_hash(target_loc, target_planet_hash)),
@@ -993,36 +977,6 @@ contract Move {
             self.view(planet_events_storage.verify_hash(target_loc, target_planet_events_state_hash)),
             "Target planet events hash mismatch",
         );
-
-        // Batch verify target arrivals, artifacts, artifact_locations (3 calls instead of 60)
-        if original_target_arrivals_count > 0 {
-            assert(
-                self.view(arrivals_storage.verify_hashes_batch(
-                    target_arrival_ids,
-                    target_arrival_hashes,
-                    original_target_arrivals_count,
-                )),
-                "Target arrival hash mismatch",
-            );
-
-            assert(
-                self.view(artifact_storage.verify_hashes_batch(
-                    target_arrival_artifact_ids,
-                    target_arrival_artifact_hashes,
-                    original_target_arrivals_count,
-                )),
-                "Target artifact hash mismatch",
-            );
-
-            assert(
-                self.view(artifact_location_storage.verify_hashes_batch(
-                    target_arrival_artifact_ids,
-                    target_arrival_artifact_location_hashes,
-                    original_target_arrivals_count,
-                )),
-                "Target artifact location hash mismatch",
-            );
-        }
 
         // Verify world, moved artifact, and activated artifact hashes
         assert(self.view(world_storage.verify_hash(0, world_hash)), "World hash mismatch");
@@ -1062,32 +1016,10 @@ contract Move {
             new_moved_artifact_location.voyage_id = event_id;
         }
 
-        // Write new states to storage.
+        // Unchanged event and artifact rows are written by separate enqueued calls.
         self.call(planet_storage.set(source_loc, new_source_planet));
-        self.call(planet_artifacts_storage.set(source_loc, new_source_planet_artifacts_state));
-        self.call(planet_events_storage.set(source_loc, new_source_planet_events_state));
-
-        // Batch write source arrival artifact locations (1 call instead of up to 20)
-        if original_source_arrivals_count > 0 {
-            self.call(artifact_location_storage.set_arrival_locations_max20(
-                source_arrival_artifact_ids,
-                new_source_arrival_artifact_locations,
-                original_source_arrivals_count,
-            ));
-        }
-
         self.call(planet_storage.set(target_loc, new_target_planet));
-        self.call(planet_artifacts_storage.set(target_loc, new_target_planet_artifacts_state));
         self.call(planet_events_storage.set(target_loc, new_target_planet_events_state));
-
-        // Batch write target arrival artifact locations (1 call instead of up to 20)
-        if original_target_arrivals_count > 0 {
-            self.call(artifact_location_storage.set_arrival_locations_max20(
-                target_arrival_artifact_ids,
-                new_target_arrival_artifact_locations,
-                original_target_arrivals_count,
-            ));
-        }
 
         self.call(arrivals_storage.set(new_arrival.id, new_arrival));
 
@@ -1117,5 +1049,63 @@ contract Move {
                 ));
             }
         }
+    }
+
+    /// Write one planet-events row. Enqueued only when that row changed.
+    #[external("public")]
+    #[only_self]
+    fn write_planet_events(location: Field, state: PlanetEvents) {
+        let planet_events_storage =
+            PlanetEventsStorage::at(self.storage.planet_events_storage_address.read());
+        self.call(planet_events_storage.set(location, state));
+    }
+
+    /// Write one planet-artifacts row. Enqueued only when that row changed.
+    #[external("public")]
+    #[only_self]
+    fn write_planet_artifacts(location: Field, state: PlanetArtifacts) {
+        let planet_artifacts_storage =
+            PlanetArtifactsStorage::at(self.storage.planet_artifacts_storage_address.read());
+        self.call(planet_artifacts_storage.set(location, state));
+    }
+
+    /// Authenticate a non-empty arrival batch, then store its artifact locations.
+    #[external("public")]
+    #[only_self]
+    fn verify_and_write_arrival_locations(
+        count: u32,
+        arrival_ids: [Field; 20],
+        arrival_hashes: [Field; 20],
+        artifact_ids: [Field; 20],
+        artifact_hashes: [Field; 20],
+        artifact_location_hashes: [Field; 20],
+        artifact_locations: [ArtifactLocation; 20],
+    ) {
+        let arrivals_storage = ArrivalStorage::at(self.storage.arrivals_storage_address.read());
+        let artifact_storage = ArtifactStorage::at(self.storage.artifact_storage_address.read());
+        let artifact_location_storage =
+            ArtifactLocationStorage::at(self.storage.artifact_location_storage_address.read());
+
+        assert(
+            self.view(arrivals_storage.verify_hashes_batch(arrival_ids, arrival_hashes, count)),
+            "Arrival hash mismatch",
+        );
+        assert(
+            self.view(artifact_storage.verify_hashes_batch(artifact_ids, artifact_hashes, count)),
+            "Artifact hash mismatch",
+        );
+        assert(
+            self.view(artifact_location_storage.verify_hashes_batch(
+                artifact_ids,
+                artifact_location_hashes,
+                count,
+            )),
+            "Artifact location hash mismatch",
+        );
+        self.call(artifact_location_storage.set_arrival_locations_max20(
+            artifact_ids,
+            artifact_locations,
+            count,
+        ));
     }
 }

@@ -7,17 +7,17 @@ Compare gameplay transaction cost for two contract storage styles on a fresh loc
 
 Numbers from 27 Sep 2026 are in [storage-style-fees.json](storage-style-fees.json). On that sandbox the fee schedule charged L2 gas and zero DA gas, so the receipt fee follows L2 gas.
 
-Billed L2 gas. `devkit` is the latest local run: full planet hash and `PlanetUpdate` only, no split-root writes. `slice writes` is the previous DevKit run. `before` is the first DevKit run. `devkitMain` is the single-root style with full arrival slots.
+Billed L2 gas. `devkit` is the latest local run: unchanged event and artifact rows are not written, and empty arrival batches are not passed into the public call. Earlier columns stay in the JSON for comparison. `devkitMain` is the single-root style with full arrival slots.
 
-| Function | DevKit before | Slice writes | No split roots | DevKitMain | Fee |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| initialize_player | 1,049,559 | 1,049,625 | 858,293 | 1,028,414 | 8,754,588,600,000 |
-| give_spaceships | 1,965,690 | 1,965,972 | 1,774,448 | 2,655,419 | 18,099,369,600,000 |
-| move | 2,305,197 | 1,972,488 | 1,619,173 | 3,782,976 | 16,515,564,600,000 |
-| upgrade_planet | 1,328,072 | 1,331,241 | 1,136,929 | 1,949,767 | 11,596,675,800,000 |
-| withdraw_silver | 1,382,314 | 1,314,571 | 1,191,171 | 2,008,785 | 12,149,944,200,000 |
+| Function | No split roots | Skip unchanged rows | DevKitMain | Fee |
+| --- | ---: | ---: | ---: | ---: |
+| initialize_player | 858,293 | 831,158 | 1,028,414 | 8,477,811,600,000 |
+| give_spaceships | 1,774,448 | 1,531,122 | 2,655,419 | 15,617,444,400,000 |
+| move | 1,619,173 | 1,362,427 | 3,782,976 | 13,896,755,400,000 |
+| upgrade_planet | 1,136,929 | 1,123,533 | 1,949,767 | 11,460,036,600,000 |
+| withdraw_silver | 1,191,171 | 1,177,559 | 2,008,785 | 12,011,101,800,000 |
 
-`move` public L2 is 1,028,373. Billed L2 is about 18% below the slice-write run and about 57% below DevKitMain. `upgrade_planet` and `withdraw_silver` are also below both earlier DevKit runs. `initialize_player` is below DevKitMain. Teardown gas was 0 for every row.
+`move` public L2 is 771,627, about 257,000 below the previous DevKit run. `give_spaceships` billed L2 fell by about 243,000. `upgrade_planet` and `withdraw_silver` fell by about 13,000–14,000 because those rows still changed. Teardown gas was 0 for every row.
 
 ## What is recorded
 
@@ -51,4 +51,4 @@ Reset the chain before measuring the other branch so both runs start from the sa
 
 ## Planet writes
 
-`PlanetStorage.set` stores the full planet hash in `state_roots` and emits the full `PlanetUpdate` log. It does not hash or store split roots, and it does not emit `PlanetSplitRootsUpdate`. Gameplay checks the full `state_roots` hash. The indexer reconstructs the planet from `PlanetUpdate`. Empty arrival batches are skipped when the planet has no voyages.
+`PlanetStorage.set` stores the full planet hash in `state_roots` and emits the full `PlanetUpdate` log. It does not hash or store split roots, and it does not emit `PlanetSplitRootsUpdate`. Gameplay checks the full `state_roots` hash. The indexer reconstructs the planet from `PlanetUpdate`. A planet-events or planet-artifacts row is written only when a field other than `last_updated` changed. An empty arrival batch is not passed into the public call.
