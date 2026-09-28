@@ -981,26 +981,34 @@ contract Move {
         // Verify world, moved artifact, and activated artifact hashes
         assert(self.view(world_storage.verify_hash(0, world_hash)), "World hash mismatch");
 
-        assert(
-            self.view(artifact_storage.verify_hash(moved_artifact_id, moved_artifact_hash)),
-            "Moved artifact hash mismatch",
-        );
+        // Id 0 means no artifact. The private circuit ignores those records, so
+        // there is no stored hash to authenticate.
+        if moved_artifact_id != 0 {
+            assert(
+                self.view(artifact_storage.verify_hash(moved_artifact_id, moved_artifact_hash)),
+                "Moved artifact hash mismatch",
+            );
+        }
 
-        assert(
-            self.view(artifact_storage.verify_hash(
-                source_activated_artifact_id,
-                source_activated_artifact_hash,
-            )),
-            "Activated artifact hash mismatch",
-        );
+        if source_activated_artifact_id != 0 {
+            assert(
+                self.view(artifact_storage.verify_hash(
+                    source_activated_artifact_id,
+                    source_activated_artifact_hash,
+                )),
+                "Activated artifact hash mismatch",
+            );
+        }
 
-        assert(
-            self.view(artifact_storage.verify_hash(
-                target_activated_artifact_id,
-                target_activated_artifact_hash,
-            )),
-            "Target activated artifact hash mismatch",
-        );
+        if target_activated_artifact_id != 0 {
+            assert(
+                self.view(artifact_storage.verify_hash(
+                    target_activated_artifact_id,
+                    target_activated_artifact_hash,
+                )),
+                "Target activated artifact hash mismatch",
+            );
+        }
 
         // Allocate a unique event ID from the atomic counter in ArrivalStorage,
         // then patch the placeholder IDs in arrival, planet events, and artifact location.
