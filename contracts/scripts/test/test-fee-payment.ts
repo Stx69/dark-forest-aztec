@@ -2,8 +2,8 @@
  * Offline checks for FEE_PAYMENT_MODE parsing, fee send fields, and funding-stop helpers.
  * Run: pnpm test:fee-payment
  */
-import { AztecAddress } from '@aztec/aztec.js/addresses';
-import { SponsoredFeePaymentMethod } from '@aztec/aztec.js/fee';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
+import { SponsoredFeePaymentMethod } from '@aztec-labs/aztec.js/fee';
 
 import {
     AccountFundingRequiredError,

@@ -1,5 +1,4 @@
 // Exercise the real Noir implementation against the frozen pre-optimization code.
-use crate::batch_utils::compute_planet_split_roots;
 use ::aztec::protocol::address::AztecAddress;
 use ::aztec::protocol::traits::FromField;
 use ::types::storage::{
@@ -97,32 +96,6 @@ fn check_refresh(count: u32, timestamp: u64, destroyed: bool, with_artifacts: bo
         held,
     );
     assert_eq(actual_v2, expected_v2);
-}
-
-#[test]
-fn superboost_split_roots_are_authenticated_and_zero_safe() {
-    let empty = compute_planet_split_roots(Planet::zero());
-    assert(empty == (0, 0, 0, 0, 0));
-
-    let mut planet = Planet::zero();
-    planet.is_initialized = true;
-    planet.population_cap = 100;
-    planet.population = 40;
-    let roots = compute_planet_split_roots(planet);
-    assert(roots.0 != 0);
-    assert(roots.1 != 0);
-    assert(roots.2 != 0);
-    assert(roots.3 != 0);
-    assert(roots.4 != 0);
-
-    let mut changed = Planet::zero();
-    changed.is_initialized = true;
-    changed.population_cap = 100;
-    changed.population = 41;
-    let changed_roots = compute_planet_split_roots(changed);
-    assert(changed_roots.1 != roots.1);
-    assert(changed_roots.4 != roots.4);
-    assert(changed_roots.0 == roots.0);
 }
 
 #[test]

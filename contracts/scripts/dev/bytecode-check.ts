@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const artifactsDir = path.join(__dirname, '..', 'artifacts');
 
-// From @aztec/constants - deployment uses bufferAsFields which chunks bytecode into 31-byte fields
+// From @aztec-labs/constants - deployment uses bufferAsFields which chunks bytecode into 31-byte fields
 const MAX_PACKED_PUBLIC_BYTECODE_SIZE_IN_FIELDS = 3000;
 const MAX_PUBLIC_BYTECODE_SIZE_IN_BYTES = 96000;
 const BYTES_PER_FIELD = 31; // Fr.SIZE_IN_BYTES - 1
@@ -143,7 +143,7 @@ function checkBytecode() {
         console.log();
     }
 
-    console.log('Limits (from @aztec/constants):');
+    console.log('Limits (from @aztec-labs/constants):');
     console.log(`  Max fields: ${MAX_PACKED_PUBLIC_BYTECODE_SIZE_IN_FIELDS}`);
     console.log(`  Max bytes:  ${MAX_PUBLIC_BYTECODE_SIZE_IN_BYTES}`);
 

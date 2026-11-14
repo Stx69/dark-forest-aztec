@@ -7,7 +7,7 @@
  * tools/aztec-explorer is vendored in this repo (it has no upstream checkout).
  */
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -24,6 +24,37 @@ const vendor = spawnSync("bash", ["scripts/dev/ensure-vendor-clones.sh"], {
 if (vendor.status !== 0) {
   process.exit(vendor.status ?? 1);
 }
+
+/** Keep Otterscan engines.node / .nvmrc aligned with tooling/TOOLCHAIN.pins. */
+function syncOtherscanNodePin() {
+  const pins = Object.fromEntries(
+    readFileSync(join(root, "tooling/TOOLCHAIN.pins"), "utf8")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith("#") && line.includes("="))
+      .map((line) => {
+        const i = line.indexOf("=");
+        return [line.slice(0, i), line.slice(i + 1)];
+      }),
+  );
+  const nodeVersion = pins.NODE_VERSION;
+  if (!nodeVersion) {
+    console.error("[install-nested] missing NODE_VERSION in tooling/TOOLCHAIN.pins");
+    process.exit(1);
+  }
+  const otherscanDir = join(root, "tools/otherscan");
+  const pkgPath = join(otherscanDir, "package.json");
+  if (!existsSync(pkgPath)) {
+    return;
+  }
+  const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+  pkg.engines = { ...(pkg.engines ?? {}), node: nodeVersion };
+  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+  writeFileSync(join(otherscanDir, ".nvmrc"), `${nodeVersion}\n`);
+  console.log(`[install-nested] tools/otherscan: engines.node=${nodeVersion}`);
+}
+
+syncOtherscanNodePin();
 
 function run(job) {
   console.log(`[install-nested] ${job.label}: ${job.command} ${job.args.join(" ")}`);

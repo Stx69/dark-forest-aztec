@@ -4,17 +4,17 @@
  * - sponsored: SponsoredFeePaymentMethod (caller must register SponsoredFPC)
  * - account: omit fee.paymentMethod (SDK charges deployer FeeJuice)
  */
-import { AztecAddress } from '@aztec/aztec.js/addresses';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
 import {
     Contract,
     DeployMethod,
     getContractInstanceFromInstantiationParams,
-} from '@aztec/aztec.js/contracts';
-import { Fr } from '@aztec/aztec.js/fields';
-import { PublicKeys } from '@aztec/aztec.js/keys';
-import type { Wallet } from '@aztec/aztec.js/wallet';
-import type { ContractArtifact } from '@aztec/stdlib/abi';
-import { getDefaultInitializer } from '@aztec/stdlib/abi';
+} from '@aztec-labs/aztec.js/contracts';
+import { Fr } from '@aztec-labs/aztec.js/fields';
+import { PublicKeys } from '@aztec-labs/aztec.js/keys';
+import type { Wallet } from '@aztec-labs/aztec.js/wallet';
+import type { ContractArtifact } from '@aztec-labs/stdlib/abi';
+import { getDefaultInitializer } from '@aztec-labs/stdlib/abi';
 import fs from 'fs';
 
 import { getContractsEnvFilePath, getWriteEnvFile } from './env.ts';

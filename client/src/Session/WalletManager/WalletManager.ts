@@ -6,17 +6,16 @@
  * with localStorage persistence via KeyStore.
  */
 
-import { AcceleratorProver } from "@alejoamiras/aztec-accelerator";
-import { AztecAddress } from "@aztec/aztec.js/addresses";
-import { getContractInstanceFromInstantiationParams } from "@aztec/aztec.js/contracts";
-import { BlockNumber, Fq, Fr } from "@aztec/aztec.js/fields";
-import type { AztecNode } from "@aztec/aztec.js/node";
-import { createAztecNodeClient, waitForNode } from "@aztec/aztec.js/node";
-import { getFeeJuiceBalance } from "@aztec/aztec.js/utils";
-import { type Wallet } from "@aztec/aztec.js/wallet";
-import { SPONSORED_FPC_SALT } from "@aztec/constants";
-import { SponsoredFPCContractArtifact } from "@aztec/noir-contracts.js/SponsoredFPC";
-import { EmbeddedWallet } from "@aztec/wallets/embedded";
+import { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import { getContractInstanceFromInstantiationParams } from "@aztec-labs/aztec.js/contracts";
+import { BlockNumber, Fq, Fr } from "@aztec-labs/aztec.js/fields";
+import type { AztecNode } from "@aztec-labs/aztec.js/node";
+import { createAztecNodeClient, waitForNode } from "@aztec-labs/aztec.js/node";
+import { getFeeJuiceBalance } from "@aztec-labs/aztec.js/utils";
+import { type Wallet } from "@aztec-labs/aztec.js/wallet";
+import { SPONSORED_FPC_SALT } from "@aztec-labs/constants";
+import { SponsoredFPCContractArtifact } from "@aztec-labs/noir-contracts.js/SponsoredFPC";
+import { EmbeddedWallet } from "@aztec-labs/wallets/embedded";
 import {
   ACCOUNT_ADDRESS,
   ADMIN_DEPLOYER_ADDRESS,
@@ -559,6 +558,33 @@ export class WalletManager {
     if (config.proverUrl) {
       skipHeadlessHttpsHealthProbe(config.proverUrl);
     }
+
+    // Aztec 6: @alejoamiras/aztec-accelerator has no 6.0.0 release yet.
+    // Keep the optional path, but never block wallet creation on it.
+    let proverOrOptions: object | undefined;
+    if (config.pxeConfig?.proverEnabled && config.proverUrl) {
+      try {
+        const { AcceleratorProver } = await import(
+          /* @vite-ignore */ "@alejoamiras/aztec-accelerator"
+        );
+        const url = new URL(config.proverUrl);
+        proverOrOptions = new AcceleratorProver({
+          accelerator: {
+            port: parseInt(url.port, 10) || 59833,
+            host: url.hostname,
+          },
+          onPhase: (phase: string, data: unknown) => {
+            console.log(`Phase: ${phase}`, data);
+          },
+        });
+      } catch (err) {
+        console.warn(
+          "[WalletManager] @alejoamiras/aztec-accelerator not available; continuing without accelerator prover:",
+          err instanceof Error ? err.message : err
+        );
+      }
+    }
+
     const wallet = await EmbeddedWallet.create(node, {
       pxe: {
         dataDirectory: pxeDataDir,
@@ -566,20 +592,8 @@ export class WalletManager {
           config.pxeConfig?.dataStoreMapSizeKb ??
           DEFAULT_PXE_DATA_STORE_MAP_SIZE_KB,
         ...config.pxeConfig,
-        ...(config.pxeConfig?.proverEnabled && config.proverUrl
-          ? (() => {
-              const url = new URL(config.proverUrl!);
-              const prover = new AcceleratorProver({
-                accelerator: {
-                  port: parseInt(url.port, 10) || 59833,
-                  host: url.hostname,
-                },
-                onPhase: (phase, data) => {
-                  console.log(`Phase: ${phase}`, data);
-                },
-              });
-              return { proverOrOptions: prover };
-            })()
+        ...(proverOrOptions
+          ? { proverOrOptions: proverOrOptions as never }
           : {}),
       },
     });

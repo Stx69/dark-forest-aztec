@@ -16,10 +16,10 @@
  *
  * Or with tsx: pnpm exec tsx scripts/test/test-core-initialize-player.ts [userIndex]
  */
-import { getPublicEvents } from '@aztec/aztec.js/events';
-import { BlockNumber } from '@aztec/foundation/branded-types';
-import { Gas } from '@aztec/stdlib/gas';
-import { getGasLimits } from '@aztec/wallet-sdk/base-wallet';
+import { getPublicEvents } from '@aztec-labs/aztec.js/events';
+import { BlockNumber } from '@aztec-labs/foundation/branded-types';
+import { Gas } from '@aztec-labs/stdlib/gas';
+import { getGasLimits } from '@aztec-labs/wallet-sdk/base-wallet';
 
 import { unwrapSimulateResult } from '../utils/index.ts';
 import { logFeeMeasure } from './feeMeasureLog.ts';

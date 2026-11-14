@@ -1,8 +1,8 @@
-import { getSchnorrInitializerlessAccountContractAddress } from '@aztec/accounts/schnorr';
-import { AztecAddress } from '@aztec/aztec.js/addresses';
-import { BlockNumber, Fq, Fr } from '@aztec/aztec.js/fields';
-import type { AztecNode } from '@aztec/aztec.js/node';
-import { EmbeddedWallet } from '@aztec/wallets/embedded';
+import { getSchnorrInitializerlessAccountContractAddress } from '@aztec-labs/accounts/schnorr';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
+import { BlockNumber, Fq, Fr } from '@aztec-labs/aztec.js/fields';
+import type { AztecNode } from '@aztec-labs/aztec.js/node';
+import { EmbeddedWallet } from '@aztec-labs/wallets/embedded';
 import fs from 'fs';
 import path from 'path';
 

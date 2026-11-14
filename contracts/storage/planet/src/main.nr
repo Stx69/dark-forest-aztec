@@ -13,7 +13,7 @@ pub contract PlanetStorage {
     };
 
     use ::aztec::state_vars::{Map, PublicMutable};
-    use ::types::storage::planet::{Planet, PlanetSplitRoots};
+    use ::types::storage::planet::Planet;
 
     #[storage]
     struct Storage<Context> {
@@ -25,12 +25,6 @@ pub contract PlanetStorage {
         authorized_count: PublicMutable<u32, Context>,
         // id (e.g. location_id) -> poseidon2 hash of Planet
         state_roots: Map<Field, PublicMutable<Field, Context>, Context>,
-        // Kept so existing storage layout stays valid. Gameplay writes no longer update these.
-        static_roots: Map<Field, PublicMutable<Field, Context>, Context>,
-        dynamic_roots: Map<Field, PublicMutable<Field, Context>, Context>,
-        stats_roots: Map<Field, PublicMutable<Field, Context>, Context>,
-        modifier_roots: Map<Field, PublicMutable<Field, Context>, Context>,
-        composed_roots: Map<Field, PublicMutable<Field, Context>, Context>,
     }
 
     #[event]
@@ -39,14 +33,6 @@ pub contract PlanetStorage {
         id: Field,
         block_number: u32,
         state: Planet,
-    }
-
-    #[event]
-    #[::types::storage::state::state_update]
-    struct PlanetSplitRootsUpdate {
-        id: Field,
-        block_number: u32,
-        state: PlanetSplitRoots,
     }
 
     #[external("public")]
@@ -179,33 +165,6 @@ pub contract PlanetStorage {
     #[view]
     fn get_state_root(id: Field) -> Field {
         self.storage.state_roots.at(id).read()
-    }
-
-    #[external("public")]
-    #[view]
-    fn get_split_roots(id: Field) -> (Field, Field, Field, Field, Field) {
-        (
-            self.storage.static_roots.at(id).read(), self.storage.dynamic_roots.at(id).read(),
-            self.storage.stats_roots.at(id).read(), self.storage.modifier_roots.at(id).read(),
-            self.storage.composed_roots.at(id).read(),
-        )
-    }
-
-    #[external("public")]
-    #[view]
-    fn verify_split_roots(
-        id: Field,
-        static_root: Field,
-        dynamic_root: Field,
-        stats_root: Field,
-        modifier_root: Field,
-        composed_root: Field,
-    ) -> bool {
-        (self.storage.static_roots.at(id).read() == static_root)
-            & (self.storage.dynamic_roots.at(id).read() == dynamic_root)
-            & (self.storage.stats_roots.at(id).read() == stats_root)
-            & (self.storage.modifier_roots.at(id).read() == modifier_root)
-            & (self.storage.composed_roots.at(id).read() == composed_root)
     }
 
     #[external("public")]

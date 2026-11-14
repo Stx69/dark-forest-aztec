@@ -1,7 +1,7 @@
 # SUPER BOOST V2
 
 Base: `2bc30f6a04b2997095aa21e9a986e99b9fa83854`.
-Toolchain: Aztec 5.0.1; Node 24.12.0; pnpm 10.28.0.
+Toolchain: Aztec 5.0.1; Node 24.22.1; pnpm 10.28.0.
 
 The seven local branches form a cumulative stack. Commit each verified stage
 before creating its successor. Do not push intermediate branches. The final

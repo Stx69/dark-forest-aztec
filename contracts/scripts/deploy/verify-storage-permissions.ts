@@ -11,9 +11,9 @@
  * this script does not deploy the account contract, game contracts, or send configure txs.
  * Aztec.js `simulate()` still needs a `from` address so the wallet/PXE can run the call.
  */
-import { AztecAddress } from '@aztec/aztec.js/addresses';
-import type { ContractBase } from '@aztec/aztec.js/contracts';
-import { SponsoredFPCContractArtifact } from '@aztec/noir-contracts.js/SponsoredFPC';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
+import type { ContractBase } from '@aztec-labs/aztec.js/contracts';
+import { SponsoredFPCContractArtifact } from '@aztec-labs/noir-contracts.js/SponsoredFPC';
 
 import {
     createTolerantAztecNodeClient,

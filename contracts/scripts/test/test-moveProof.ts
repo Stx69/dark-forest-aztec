@@ -186,7 +186,7 @@ async function runRevealInitLocationProofTests(
 }
 
 async function main() {
-    // v5 @aztec/bb.js requires the Barretenberg singleton to be initialized
+    // v5 @aztec-foundation/bb.js requires the Barretenberg singleton to be initialized
     // once before any synchronous getSingleton() call (used by perlin/poseidon2).
     await initPoseidon2();
 

@@ -54,7 +54,7 @@ done
 info "Checking prerequisites..."
 
 if ! command -v node &>/dev/null; then
-  err "Node.js not found. Install v24.12.0 (see .nvmrc): nvm install"
+  err "Node.js not found. Install v24.22.1 (see .nvmrc): nvm install"
   exit 1
 fi
 

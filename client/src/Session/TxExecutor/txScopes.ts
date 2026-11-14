@@ -1,5 +1,5 @@
-import { AztecAddress } from "@aztec/aztec.js/addresses";
-import type { Wallet } from "@aztec/aztec.js/wallet";
+import { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import type { Wallet } from "@aztec-labs/aztec.js/wallet";
 import {
   ADMIN_CONTRACT_ADDRESS,
   ARRIVAL_STORAGE_CONTRACT_ADDRESS,

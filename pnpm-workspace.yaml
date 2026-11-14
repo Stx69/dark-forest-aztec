@@ -36,7 +36,8 @@ minimumReleaseAge: 1440
 minimumReleaseAgeStrict: false
 pmOnFail: error
 publicHoistPattern:
-  - "@aztec/*"
+  - "@aztec-labs/*"
+  - "@aztec-foundation/*"
 
 overrides:
   "@aws-sdk/client-s3": "3.1141.0"

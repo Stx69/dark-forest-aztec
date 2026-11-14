@@ -2,13 +2,13 @@
  * Helpers to get contract instances after deploy (from deployment results or .env)
  * so you can run post-deploy interactions (e.g. Config set_default_*, Admin set_*_storage_address).
  */
-import { AztecAddress } from '@aztec/aztec.js/addresses';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
 import {
     type ContractBase,
     getContractInstanceFromInstantiationParams,
-} from '@aztec/aztec.js/contracts';
-import { Fr } from '@aztec/aztec.js/fields';
-import type { Wallet } from '@aztec/aztec.js/wallet';
+} from '@aztec-labs/aztec.js/contracts';
+import { Fr } from '@aztec-labs/aztec.js/fields';
+import type { Wallet } from '@aztec-labs/aztec.js/wallet';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 
@@ -112,7 +112,7 @@ export async function registerContractsWithWallet(
         if (!artifact) continue;
         try {
             const instance = await getContractInstanceFromInstantiationParams(
-                artifact as import('@aztec/stdlib/abi').ContractArtifact,
+                artifact as import('@aztec-labs/stdlib/abi').ContractArtifact,
                 {
                     deployer: AztecAddress.fromStringUnsafe(deployerStr),
                     salt: Fr.fromString(saltStr),
@@ -121,7 +121,7 @@ export async function registerContractsWithWallet(
             );
             await wallet.registerContract(
                 instance,
-                artifact as import('@aztec/stdlib/abi').ContractArtifact
+                artifact as import('@aztec-labs/stdlib/abi').ContractArtifact
             );
         } catch (err) {
             console.warn(

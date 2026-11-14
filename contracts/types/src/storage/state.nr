@@ -27,9 +27,9 @@ pub comptime fn fixed_state_hash(fields: Quoted, width: u32) -> Quoted {
 
 pub comptime fn state_update(event: TypeDefinition) -> Quoted {
     let name = event.name();
-    let (_, state, _) = event.fields(@[])[2];
+    let state = event.fields(@[])[2].typ();
     let encoded = quote { [Field; <$state as aztec::protocol::traits::Serialize>::N] }.as_type();
-    let width = encoded.as_array().unwrap().1.as_constant().unwrap();
+    let width = encoded.as_array().unwrap().length_type().as_constant().unwrap();
     let tag = quote { comptime { aztec::protocol::hash::compute_log_tag(aztec::protocol::traits::ToField::to_field(<$name as aztec::event::event_interface::EventInterface>::get_event_type_id()), aztec::protocol::constants::DOM_SEP__EVENT_LOG_TAG) } };
     let mut words: [Quoted] = @[tag, quote { id }, quote { block_number as Field }];
     for i in 0..width {
@@ -51,19 +51,22 @@ pub comptime fn state_update(event: TypeDefinition) -> Quoted {
 
 comptime fn state_fields(typ: Type, value: Quoted) -> [Quoted] {
     let encoded = quote { [Field; <$typ as aztec::protocol::traits::Serialize>::N] }.as_type();
-    if encoded.as_array().unwrap().1.as_constant().unwrap() == 1 {
+    if encoded.as_array().unwrap().length_type().as_constant().unwrap() == 1 {
         @[quote { aztec::protocol::traits::Serialize::serialize($value)[0] }]
     } else {
         let mut fields: [Quoted] = @[];
         if typ.as_array().is_some() {
-            let (element, length) = typ.as_array().unwrap();
-            for i in 0..length.as_constant().unwrap() {
+            let array = typ.as_array().unwrap();
+            let element = array.element_type();
+            let length = array.length_type().as_constant().unwrap();
+            for i in 0..length {
                 fields = fields.append(state_fields(element, quote { $value[$i] }));
             }
         } else {
-            let (definition, generics) = typ.as_data_type().unwrap();
-            for member in definition.fields(generics) {
-                let (name, member_type, _) = member;
+            let data_type = typ.as_data_type().unwrap();
+            for member in data_type.definition().fields(data_type.generics()) {
+                let name = member.name();
+                let member_type = member.typ();
                 fields = fields.append(state_fields(member_type, quote { $value.$name }));
             }
         }
@@ -85,7 +88,7 @@ comptime fn is_batch(typ: Type) -> bool {
     if typ.as_array().is_none() {
         false
     } else {
-        let length = typ.as_array().unwrap().1.as_constant().unwrap();
+        let length = typ.as_array().unwrap().length_type().as_constant().unwrap();
         (length == 5) | (length == 9) | (length == 20)
     }
 }
@@ -93,20 +96,23 @@ comptime fn is_batch(typ: Type) -> bool {
 // Expand public input arrays without changing the SDK's private-circuit decoder.
 comptime fn read_public(typ: Type) -> Quoted {
     if is_batch(typ) {
-        let (element, length) = typ.as_array().unwrap();
+        let array = typ.as_array().unwrap();
+        let element = array.element_type();
+        let length = array.length_type().as_constant().unwrap();
         let mut items: [Quoted] = @[];
-        for _ in 0..length.as_constant().unwrap() {
+        for _ in 0..length {
             items = items.push_back(read_public(element));
         }
         let items = items.join(quote { , });
         quote { [$items] }
     } else if typ.as_data_type().is_some() {
-        let (definition, generics) = typ.as_data_type().unwrap();
-        let members = definition.fields(generics);
-        if members.any(|member: (Quoted, Type, Quoted)| is_batch(member.1)) {
+        let data_type = typ.as_data_type().unwrap();
+        let members = data_type.definition().fields(data_type.generics());
+        if members.any(|member| is_batch(member.typ())) {
             let fields = members
-                .map(|(name, member_type, _): (Quoted, Type, Quoted)| {
-                    let read = read_public(member_type);
+                .map(|member| {
+                    let name = member.name();
+                    let read = read_public(member.typ());
                     quote { $name: $read }
                 })
                 .join(quote { , });
@@ -188,15 +194,22 @@ comptime fn storage_calls(module: Module) -> Quoted {
             let optimized = optimized_method(name).unwrap();
             let result = f.return_type();
             let params = f.parameters();
-            let declarations =
-                params.map(|(name, typ): (Quoted, Type)| quote { $name: $typ }).join(quote { , });
+            let declarations = params
+                .map(|param| {
+                    let name = param.name();
+                    let typ = param.typ();
+                    quote { $name: $typ }
+                })
+                .join(quote { , });
             let zeros = params
-                .map(|(_, typ): (Quoted, Type)| quote { std::mem::zeroed::<$typ>() })
+                .map(|param| {
+                    let typ = param.typ();
+                    quote { std::mem::zeroed::<$typ>() }
+                })
                 .join(quote { , });
             let mut words: [Quoted] = @[quote { selector }];
             for parameter in params {
-                let (arg, typ) = parameter;
-                words = words.append(state_fields(typ, arg));
+                words = words.append(state_fields(parameter.typ(), parameter.name()));
             }
             let words = words.join(quote { , });
             let call = if f.has_named_attribute("view") {
@@ -263,10 +276,18 @@ comptime fn rewrite_body(expr: Expr, rewritten: &mut u32) -> Quoted {
             expr.as_block().unwrap().map(|item: Expr| rewrite_body(item, rewritten)).join(quote {});
         out = quote { { $statements } };
     } else if expr.as_method_call().is_some() {
-        let (receiver, method, generics, args) = expr.as_method_call().unwrap();
+        let call = expr.as_method_call().unwrap();
+        let receiver = call.receiver();
+        let method = call.method_name();
+        let generics = call.generics();
+        let args = call.arguments();
         if (receiver.quoted() == quote { self }) & (generics.len() == 0) & (args.len() == 1) {
             if args[0].as_method_call().is_some() {
-                let (target, name, inner_generics, values) = args[0].as_method_call().unwrap();
+                let inner = args[0].as_method_call().unwrap();
+                let target = inner.receiver();
+                let name = inner.method_name();
+                let inner_generics = inner.generics();
+                let values = inner.arguments();
                 let optimized = optimized_method(name);
                 let writes =
                     (name == quote { set }) | (name == quote { set_arrival_locations_max20 });
@@ -282,28 +303,30 @@ comptime fn rewrite_body(expr: Expr, rewritten: &mut u32) -> Quoted {
             }
         }
     } else if expr.as_unary_op().is_some() {
-        let (operator, value) = expr.as_unary_op().unwrap();
-        let operator = operator.quoted();
-        let value = rewrite_body(value, rewritten);
+        let unary = expr.as_unary_op().unwrap();
+        let operator = unary.operator().quoted();
+        let value = rewrite_body(unary.rhs(), rewritten);
         out = quote { ($operator($value)) };
     } else if expr.as_binary_op().is_some() {
-        let (left, operator, right) = expr.as_binary_op().unwrap();
-        let left = rewrite_body(left, rewritten);
-        let right = rewrite_body(right, rewritten);
-        let operator = operator.quoted();
+        let binary = expr.as_binary_op().unwrap();
+        let left = rewrite_body(binary.lhs(), rewritten);
+        let right = rewrite_body(binary.rhs(), rewritten);
+        let operator = binary.operator().quoted();
         out = quote { (($left) $operator ($right)) };
     } else if expr.as_assert().is_some() {
-        let (condition, message) = expr.as_assert().unwrap();
-        let condition = rewrite_body(condition, rewritten);
-        out = if message.is_some() {
-            let message = message.unwrap();
+        let assertion = expr.as_assert().unwrap();
+        let condition = rewrite_body(assertion.predicate(), rewritten);
+        out = if assertion.message().is_some() {
+            let message = assertion.message().unwrap();
             quote { assert($condition, $message) }
         } else {
             quote { assert($condition) }
         };
     } else if expr.as_let().is_some() {
-        let (pattern, typ, value) = expr.as_let().unwrap();
-        let value = rewrite_body(value, rewritten);
+        let let_expr = expr.as_let().unwrap();
+        let pattern = let_expr.pattern();
+        let typ = let_expr.typ();
+        let value = rewrite_body(let_expr.expression(), rewritten);
         out = if typ.is_some() {
             let typ = typ.unwrap();
             quote { let $pattern: $typ = $value }
@@ -311,23 +334,27 @@ comptime fn rewrite_body(expr: Expr, rewritten: &mut u32) -> Quoted {
             quote { let $pattern = $value }
         };
     } else if expr.as_assign().is_some() {
-        let (target, value) = expr.as_assign().unwrap();
-        let value = rewrite_body(value, rewritten);
+        let assign = expr.as_assign().unwrap();
+        let value = rewrite_body(assign.rhs(), rewritten);
+        let target = assign.lhs();
         out = quote { $target = $value };
     } else if expr.as_if().is_some() {
-        let (condition, then, otherwise) = expr.as_if().unwrap();
-        let condition = rewrite_body(condition, rewritten);
-        let then = rewrite_body(then, rewritten);
-        out = if otherwise.is_some() {
-            let otherwise = rewrite_body(otherwise.unwrap(), rewritten);
+        let if_expr = expr.as_if().unwrap();
+        let condition = rewrite_body(if_expr.condition(), rewritten);
+        let then = rewrite_body(if_expr.consequence(), rewritten);
+        out = if if_expr.alternative().is_some() {
+            let otherwise = rewrite_body(if_expr.alternative().unwrap(), rewritten);
             quote { if $condition $then else $otherwise }
         } else {
             quote { if $condition $then }
         };
     } else if expr.as_for_range().is_some() {
-        let (index, start, end, inclusive, body) = expr.as_for_range().unwrap();
-        let body = rewrite_body(body, rewritten);
-        out = if inclusive {
+        let for_expr = expr.as_for_range().unwrap();
+        let index = for_expr.identifier();
+        let start = for_expr.start();
+        let end = for_expr.end();
+        let body = rewrite_body(for_expr.body(), rewritten);
+        out = if for_expr.is_inclusive() {
             quote { for $index in $start..=$end $body }
         } else {
             quote { for $index in $start..$end $body }

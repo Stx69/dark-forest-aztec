@@ -11,7 +11,7 @@
  *
  * Requires: deploy + configure done, .env has ACCOUNT_* and CONFIG_CONTRACT_ADDRESS.
  */
-import { SponsoredFPCContractArtifact } from '@aztec/noir-contracts.js/SponsoredFPC';
+import { SponsoredFPCContractArtifact } from '@aztec-labs/noir-contracts.js/SponsoredFPC';
 
 import {
     createTolerantAztecNodeClient,

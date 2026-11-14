@@ -13,8 +13,8 @@
  *
  * Requires: .env with ACCOUNT_* and all *_CONTRACT_ADDRESS keys (see deploy).
  */
-import { AztecAddress } from '@aztec/aztec.js/addresses';
-import type { ContractBase } from '@aztec/aztec.js/contracts';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
+import type { ContractBase } from '@aztec-labs/aztec.js/contracts';
 
 import {
     buildSendOpts,

@@ -4,11 +4,11 @@
  *
  * Run: pnpm exec tsx scripts/test/test-setup.ts  or  node --experimental-transform-types scripts/test/test-setup.ts
  */
-import { AztecAddress } from '@aztec/aztec.js/addresses';
-import type { ContractBase } from '@aztec/aztec.js/contracts';
-import { SponsoredFeePaymentMethod } from '@aztec/aztec.js/fee';
-import type { AztecNode } from '@aztec/aztec.js/node';
-import { SponsoredFPCContractArtifact } from '@aztec/noir-contracts.js/SponsoredFPC';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
+import type { ContractBase } from '@aztec-labs/aztec.js/contracts';
+import { SponsoredFeePaymentMethod } from '@aztec-labs/aztec.js/fee';
+import type { AztecNode } from '@aztec-labs/aztec.js/node';
+import { SponsoredFPCContractArtifact } from '@aztec-labs/noir-contracts.js/SponsoredFPC';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';

@@ -12,9 +12,9 @@
 
 import "./TestPageStyles.css";
 
-import { AztecAddress } from "@aztec/aztec.js/addresses";
-import type { AztecNode } from "@aztec/aztec.js/node";
-import { createAztecNodeClient } from "@aztec/aztec.js/node";
+import { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import type { AztecNode } from "@aztec-labs/aztec.js/node";
+import { createAztecNodeClient } from "@aztec-labs/aztec.js/node";
 import { CONFIG_CONTRACT_ADDRESS, START_BLOCK } from "@dfpunk/contracts";
 import { ConfigContract } from "@dfpunk/contracts/artifacts/Config";
 import type { ClientTxStatus, Transaction, TxIntent } from "@dfpunk/types";

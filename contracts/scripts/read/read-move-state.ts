@@ -11,9 +11,9 @@
  *
  * If sourceLoc/targetLoc omitted, all PlanetUpdate and ArrivalUpdate events in the block are printed.
  */
-import { getPublicEvents } from '@aztec/aztec.js/events';
-import { BlockNumber } from '@aztec/foundation/branded-types';
-import type { EventMetadataDefinition } from '@aztec/stdlib/abi';
+import { getPublicEvents } from '@aztec-labs/aztec.js/events';
+import { BlockNumber } from '@aztec-labs/foundation/branded-types';
+import type { EventMetadataDefinition } from '@aztec-labs/stdlib/abi';
 
 import { getTestContext, type TestContext } from '../test/test-setup.ts';
 

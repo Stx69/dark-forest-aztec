@@ -13,8 +13,8 @@
  *
  * Requires: .env with ACCOUNT_* (admin) and CONFIG_CONTRACT_ADDRESS (run deploy first).
  */
-import { SponsoredFeePaymentMethod } from '@aztec/aztec.js/fee';
-import { SponsoredFPCContractArtifact } from '@aztec/noir-contracts.js/SponsoredFPC';
+import { SponsoredFeePaymentMethod } from '@aztec-labs/aztec.js/fee';
+import { SponsoredFPCContractArtifact } from '@aztec-labs/noir-contracts.js/SponsoredFPC';
 
 import {
     createTolerantAztecNodeClient,

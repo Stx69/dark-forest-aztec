@@ -12,8 +12,8 @@
  * Requires: AZTEC_NODE_URL. Address defaults to ACCOUNT_ADDRESS from the active env file.
  * This only reports public Fee Juice (gas); private note balances cannot be queried by address alone.
  */
-import { AztecAddress } from '@aztec/aztec.js/addresses';
-import { getFeeJuiceBalance } from '@aztec/aztec.js/utils';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
+import { getFeeJuiceBalance } from '@aztec-labs/aztec.js/utils';
 
 import {
     createTolerantAztecNodeClient,

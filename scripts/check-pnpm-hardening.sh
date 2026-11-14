@@ -74,13 +74,19 @@ if (p.pnpm) {
 if (!String(p.scripts?.preinstall || "").includes("enforce-pnpm")) process.exit(5);
 const aztec = { ...p.dependencies };
 for (const [name, ver] of Object.entries(aztec)) {
-  if (name.startsWith("@aztec/") && ver !== "5.2.0") {
-    console.error(name + " must be exact 5.2.0");
+  if (name.startsWith("@aztec/")) {
+    console.error(name + " must use @aztec-labs/ or @aztec-foundation/ scope");
+    process.exit(6);
+  }
+  const pinned =
+    name.startsWith("@aztec-labs/") || name.startsWith("@aztec-foundation/");
+  if (pinned && ver !== "6.0.0") {
+    console.error(name + " must be exact 6.0.0");
     process.exit(6);
   }
 }
 EOF
-ok "workspace hardening and Aztec 5.2.0 pins"
+ok "workspace hardening and Aztec 6.0.0 pins"
 
 if rg -n 'tag\s*=\s*"v5\.0\.1"' contracts --glob 'Nargo.toml' >/dev/null; then
   fail "a Nargo.toml is still on aztec.nr v5.0.1"

@@ -1,10 +1,10 @@
 /**
  * Deployer account diagnosis and resolution (loads `ACCOUNT_*` from env; no interactive prompts).
  */
-import { AztecAddress } from '@aztec/aztec.js/addresses';
-import { Fq, Fr } from '@aztec/aztec.js/fields';
-import type { AztecNode } from '@aztec/aztec.js/node';
-import type { EmbeddedWallet } from '@aztec/wallets/embedded';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
+import { Fq, Fr } from '@aztec-labs/aztec.js/fields';
+import type { AztecNode } from '@aztec-labs/aztec.js/node';
+import type { EmbeddedWallet } from '@aztec-labs/wallets/embedded';
 
 import { getAztecNetwork, getAztecNodeUrl, getOptionalEnv } from './env.ts';
 import {

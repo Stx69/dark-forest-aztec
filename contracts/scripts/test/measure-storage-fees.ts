@@ -17,10 +17,11 @@ const section = process.argv[2];
 if (
     section !== 'devkit' &&
     section !== 'devkitMain' &&
-    section !== 'aztec520'
+    section !== 'aztec520' &&
+    section !== 'current'
 ) {
     console.error(
-        'Usage: measure-storage-fees.ts <devkit|devkitMain|aztec520>'
+        'Usage: measure-storage-fees.ts <devkit|devkitMain|aztec520|current>'
     );
     process.exit(1);
 }
